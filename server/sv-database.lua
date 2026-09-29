@@ -13,6 +13,7 @@ MySQL.ready(function()
 
     pcall(function()
         MySQL.query.await("ALTER TABLE haze_street_parking ADD COLUMN IF NOT EXISTS model VARCHAR(64) DEFAULT NULL;")
+        MySQL.query.await("UPDATE haze_street_parking SET model = NULL WHERE model LIKE '-%' OR model = '3345191406';")
     end)
 
     MySQL.query([[

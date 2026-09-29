@@ -8,9 +8,10 @@ AddEventHandler("haze_garages:client:init", function()
 
     for garageId, garageData in pairs(Config.FixedGarages or {}) do
         local propModel = Config.GarageTerminalProp or "prop_parkstat_01"
-        lib.requestModel(propModel)
+        local propHash = Haze.Shared.GetModelHash(propModel)
+        Haze.Client.RequestModel(propHash)
 
-        local prop = CreateObject(joaat(propModel), garageData.coords.x, garageData.coords.y, garageData.coords.z - 1.0, false, false, false)
+        local prop = CreateObject(propHash, garageData.coords.x, garageData.coords.y, garageData.coords.z - 1.0, false, false, false)
         SetEntityHeading(prop, garageData.coords.w or 0.0)
         FreezeEntityPosition(prop, true)
         SetEntityInvincible(prop, true)
@@ -135,7 +136,14 @@ RegisterCommand("listarveiculos", function()
 
     local options = {}
 
+    local ped = cache.ped or PlayerPedId()
+    local pedCoords = GetEntityCoords(ped)
+
     for _, v in ipairs(vehicles) do
+        local isStreetVehicle = (v.spawnType == "street" and v.streetCoords)
+        local distToStreetSpot = isStreetVehicle and #(pedCoords - vec3(v.streetCoords.x, v.streetCoords.y, v.streetCoords.z)) or 999999.0
+        local isNearStreetSpot = (isStreetVehicle and distToStreetSpot <= 30.0)
+
         local metadata = {
             { label = "Placa", value = v.plate },
             { label = "Status", value = v.statusLabel },
@@ -160,13 +168,21 @@ RegisterCommand("listarveiculos", function()
             math.floor(v.bodyHealth / 10)
         )
 
+        local icon = isStreetVehicle and "fas fa-road" or "fas fa-car"
+
         table.insert(options, {
             title = string.upper(v.model) .. " [" .. v.plate .. "]",
             description = desc,
             metadata = metadata,
-            icon = "fas fa-car",
+            icon = icon,
             disabled = not v.isSpawnable,
             onSelect = function()
+                if isStreetVehicle and not isNearStreetSpot then
+                    SetNewWaypoint(v.streetCoords.x, v.streetCoords.y)
+                    Haze.Client.Notify(string.format("Localização do veículo %s marcada no GPS! Vá até o local para retirá-lo.", string.upper(v.model)), "info")
+                    return
+                end
+
                 if not v.isSpawnable then
                     Haze.Client.Notify("Este veículo não pode ser retirado agora (" .. v.statusLabel .. ").", "error")
                     return
@@ -187,12 +203,15 @@ RegisterCommand("listarveiculos", function()
                         return
                     end
 
-                    local ped = cache.ped or PlayerPedId()
-                    local pedCoords = GetEntityCoords(ped)
+                    local currentPed = cache.ped or PlayerPedId()
+                    local currentPedCoords = GetEntityCoords(currentPed)
 
-                    local spawnCoords = payload.spawnCoords or vec4(pedCoords.x + 2.0, pedCoords.y + 2.0, pedCoords.z, GetEntityHeading(ped))
+                    local spawnCoords = payload.spawnCoords or vec4(currentPedCoords.x + 2.0, currentPedCoords.y + 2.0, currentPedCoords.z, GetEntityHeading(currentPed))
                     local modelHash = Haze.Shared.GetModelHash(payload.model)
-                    Haze.Client.RequestModel(modelHash)
+                    if not modelHash or not Haze.Client.RequestModel(modelHash) then
+                        Haze.Client.Notify("Erro ao carregar modelo do veículo.", "error")
+                        return
+                    end
 
                     local veh = CreateVehicle(modelHash, spawnCoords.x, spawnCoords.y, spawnCoords.z, spawnCoords.w or 0.0, true, false)
                     SetVehicleNumberPlateText(veh, payload.plate)
@@ -205,9 +224,9 @@ RegisterCommand("listarveiculos", function()
                         TriggerEvent("haze_garages:client:applyVehicleDeformation", veh, payload.deformation, payload.mechanical)
                     end
 
-                    local distToPed = #(pedCoords - vec3(spawnCoords.x, spawnCoords.y, spawnCoords.z))
+                    local distToPed = #(currentPedCoords - vec3(spawnCoords.x, spawnCoords.y, spawnCoords.z))
                     if distToPed < 15.0 then
-                        TaskWarpPedIntoVehicle(ped, veh, -1)
+                        TaskWarpPedIntoVehicle(currentPed, veh, -1)
                     end
 
                     Haze.Client.Notify("Veículo retirado com sucesso!", "success")

@@ -73,26 +73,15 @@ function Haze.Client.RequestModel(model, timeout)
 
     if HasModelLoaded(modelHash) then return true end
 
-    if lib and lib.requestModel then
-        local success, res = pcall(lib.requestModel, modelHash, timeout)
-        if success and res then return res end
-    end
-
-    if IsModelInCdimage(modelHash) or IsModelValid(modelHash) then
-        RequestModel(modelHash)
-        local start = GetGameTimer()
-        while not HasModelLoaded(modelHash) do
-            Wait(10)
-            if GetGameTimer() - start > (timeout or 5000) then return false end
-        end
-        return HasModelLoaded(modelHash)
+    if not IsModelInCdimage(modelHash) and not IsModelValid(modelHash) then
+        return false
     end
 
     RequestModel(modelHash)
     local start = GetGameTimer()
     while not HasModelLoaded(modelHash) do
         Wait(10)
-        if GetGameTimer() - start > (timeout or 2000) then break end
+        if GetGameTimer() - start > (timeout or 5000) then return false end
     end
     return HasModelLoaded(modelHash)
 end
