@@ -67,20 +67,34 @@ function Haze.Client.SetVehicleProperties(veh, props)
 end
 
 function Haze.Client.RequestModel(model, timeout)
+    if not model then return false end
     local modelHash = Haze.Shared.GetModelHash(model)
     if not modelHash then return false end
+
+    if HasModelLoaded(modelHash) then return true end
+
     if lib and lib.requestModel then
-        return lib.requestModel(modelHash, timeout)
-    else
-        if not IsModelInCdimage(modelHash) or not IsModelValid(modelHash) then return false end
+        local success, res = pcall(lib.requestModel, modelHash, timeout)
+        if success and res then return res end
+    end
+
+    if IsModelInCdimage(modelHash) or IsModelValid(modelHash) then
         RequestModel(modelHash)
         local start = GetGameTimer()
         while not HasModelLoaded(modelHash) do
             Wait(10)
             if GetGameTimer() - start > (timeout or 5000) then return false end
         end
-        return true
+        return HasModelLoaded(modelHash)
     end
+
+    RequestModel(modelHash)
+    local start = GetGameTimer()
+    while not HasModelLoaded(modelHash) do
+        Wait(10)
+        if GetGameTimer() - start > (timeout or 2000) then break end
+    end
+    return HasModelLoaded(modelHash)
 end
 
 

@@ -16,9 +16,9 @@ Config.StreetParkingFee = 250 -- Custo na primeira vez em um novo ponto dinâmic
 Config.DynamicSpotTolerance = 10.0 -- Distância (em metros) para considerar o mesmo ponto dinâmico salvo
 Config.StreetParkingExpirationHours = 72 -- Horas de inatividade para expirar e enviar o carro para a garagem mais próxima
 Config.StreetParkVIPLimits = {
-    default = 1,
-    vip_gold = 2,
-    vip_diamond = 3
+    default = 50,
+    vip_gold = 100,
+    vip_diamond = 200
 }
 
 -- Configurações de Parquímetros e Tickets
