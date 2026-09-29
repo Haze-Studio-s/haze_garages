@@ -13,7 +13,7 @@ Antes de iniciar os testes, certifique-se de que os seguintes pontos foram cumpr
 - [x] O item `parking_ticket` está registrado no `ox_inventory/data/items.lua`.
 - [x] O MySQL (`oxmysql`) está rodando normalmente.
 
----gg
+---
 
 ## 🧪 Roteiro de Testes por Módulo
 
