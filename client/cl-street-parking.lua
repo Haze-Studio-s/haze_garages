@@ -118,15 +118,6 @@ RegisterNetEvent("haze_garages:client:refreshStreetVehicles", function(existingV
                             return
                         end
                     end
-
-                    local modelHash = Haze.Shared.GetModelHash(item.model or "adder")
-                    Haze.Client.RequestModel(modelHash)
-                    local veh = CreateVehicle(modelHash, item.coords.x, item.coords.y, item.coords.z, item.coords.w or 0.0, false, false)
-                    SetVehicleNumberPlateText(veh, item.plate)
-                    SetEntityAsMissionEntity(veh, true, true)
-                    FreezeEntityPosition(veh, true)
-                    SetVehicleDoorsLocked(veh, 2)
-                    self.entity = veh
                 end
             end,
             onLeave = function(self)

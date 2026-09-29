@@ -125,3 +125,102 @@ RegisterNetEvent("haze_garages:client:spawnVehicle", function(plate, garageId)
     TaskWarpPedIntoVehicle(cache.ped or PlayerPedId(), veh, -1)
     Haze.Client.Notify(Locale.vehicle_spawned, "success")
 end)
+
+RegisterCommand("listarveiculos", function()
+    local vehicles = lib.callback.await("haze_garages:server:getDetailedPlayerVehicles", false)
+    if not vehicles or #vehicles == 0 then
+        Haze.Client.Notify("Você não possui nenhum veículo cadastrado.", "info")
+        return
+    end
+
+    local options = {}
+
+    for _, v in ipairs(vehicles) do
+        local metadata = {
+            { label = "Placa", value = v.plate },
+            { label = "Status", value = v.statusLabel },
+            { label = "Motor", value = string.format("%.0f%%", (v.engineHealth / 10) or 100) },
+            { label = "Lataria", value = string.format("%.0f%%", (v.bodyHealth / 10) or 100) },
+            { label = "Combustível", value = string.format("%.0f%%", v.fuel or 100) },
+            { label = "Quilometragem", value = string.format("%.1f", v.mileage or 0) }
+        }
+
+        if v.wearData and type(v.wearData) == "table" then
+            for part, val in pairs(v.wearData) do
+                table.insert(metadata, {
+                    label = "Peça " .. string.upper(part),
+                    value = string.format("%.0f%%", val)
+                })
+            end
+        end
+
+        local desc = string.format("📍 Status: **%s**\n🔧 Motor: %d%% | Lataria: %d%%", 
+            v.statusLabel, 
+            math.floor(v.engineHealth / 10), 
+            math.floor(v.bodyHealth / 10)
+        )
+
+        table.insert(options, {
+            title = string.upper(v.model) .. " [" .. v.plate .. "]",
+            description = desc,
+            metadata = metadata,
+            icon = "fas fa-car",
+            disabled = not v.isSpawnable,
+            onSelect = function()
+                if not v.isSpawnable then
+                    Haze.Client.Notify("Este veículo não pode ser retirado agora (" .. v.statusLabel .. ").", "error")
+                    return
+                end
+
+                local confirm = lib.alertDialog({
+                    header = "Retirar Veículo",
+                    content = string.format("Deseja retirar o veículo **%s** [%s]?\n\nLocalização atual: **%s**", string.upper(v.model), v.plate, v.statusLabel),
+                    centered = true,
+                    cancel = true,
+                    labels = { confirm = "Retirar / Spawn", cancel = "Cancelar" }
+                })
+
+                if confirm == "confirm" then
+                    local success, payload = lib.callback.await("haze_garages:server:unparkOrSpawnVehicle", false, v.plate)
+                    if not success then
+                        Haze.Client.Notify(payload or "Erro ao retirar veículo.", "error")
+                        return
+                    end
+
+                    local ped = cache.ped or PlayerPedId()
+                    local pedCoords = GetEntityCoords(ped)
+
+                    local spawnCoords = payload.spawnCoords or vec4(pedCoords.x + 2.0, pedCoords.y + 2.0, pedCoords.z, GetEntityHeading(ped))
+                    local modelHash = Haze.Shared.GetModelHash(payload.model)
+                    Haze.Client.RequestModel(modelHash)
+
+                    local veh = CreateVehicle(modelHash, spawnCoords.x, spawnCoords.y, spawnCoords.z, spawnCoords.w or 0.0, true, false)
+                    SetVehicleNumberPlateText(veh, payload.plate)
+
+                    if payload.mods then
+                        Haze.Client.SetVehicleProperties(veh, payload.mods)
+                    end
+
+                    if payload.deformation or payload.mechanical then
+                        TriggerEvent("haze_garages:client:applyVehicleDeformation", veh, payload.deformation, payload.mechanical)
+                    end
+
+                    local distToPed = #(pedCoords - vec3(spawnCoords.x, spawnCoords.y, spawnCoords.z))
+                    if distToPed < 15.0 then
+                        TaskWarpPedIntoVehicle(ped, veh, -1)
+                    end
+
+                    Haze.Client.Notify("Veículo retirado com sucesso!", "success")
+                end
+            end
+        })
+    end
+
+    lib.registerContext({
+        id = "haze_garages_list_vehicles",
+        title = "🚗 Meus Veículos",
+        options = options
+    })
+
+    lib.showContext("haze_garages_list_vehicles")
+end, false)
