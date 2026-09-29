@@ -1,0 +1,42 @@
+fx_version 'cerulean'
+game 'gta5'
+lua54 'yes'
+
+name 'haze_garages'
+author 'Haze Studios'
+description 'Sistema Unificado de Garagens, Estacionamento de Rua Persistente e Parquímetros'
+version '1.0.0'
+
+shared_scripts {
+    '@ox_lib/init.lua',
+    'config.lua',
+    'locales/pt-BR.lua',
+    'shared/main.lua'
+}
+
+client_scripts {
+    'framework/cl-wrapper.lua',
+    'client/cl-main.lua',
+    'client/cl-garage.lua',
+    'client/cl-street-parking.lua',
+    'client/cl-parking-meters.lua',
+    'client/cl-deformation.lua'
+}
+
+server_scripts {
+    '@oxmysql/lib/MySQL.lua',
+    'framework/sv-wrapper.lua',
+    'server/sv-database.lua',
+    'server/sv-garage.lua',
+    'server/sv-street-parking.lua',
+    'server/sv-parking-meters.lua',
+    'server/sv-deformation.lua'
+}
+
+ui_page 'web/index.html'
+
+files {
+    'web/index.html',
+    'web/style.css',
+    'web/app.js'
+}
