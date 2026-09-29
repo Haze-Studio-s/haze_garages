@@ -57,25 +57,47 @@ RegisterNetEvent("haze_garages:client:openGarageMenu", function(garageId)
         return
     end
 
-    local options = {}
+    local nuiVehicles = {}
     for _, v in ipairs(vehicles) do
         local plate = v.plate
         local model = v.vehicle or v.model or "Desconhecido"
-        options[#options + 1] = {
-            title = string.format("%s [%s]", string.upper(model), plate),
-            description = "Clique para retirar o veículo",
-            onSelect = function()
-                TriggerEvent("haze_garages:client:spawnVehicle", plate, garageId)
-            end
+        
+        local wearInfo = nil
+        if Config.EnableGranollaMechanic and GetResourceState('granolla_mechanic') == 'started' then
+            pcall(function()
+                wearInfo = lib.callback.await("granolla_mechanic:server:getVehicleWear", false, plate, false)
+            end)
+        end
+
+        nuiVehicles[#nuiVehicles + 1] = {
+            plate = plate,
+            model = string.upper(model),
+            engine = v.engine or 1000,
+            body = v.body or 1000,
+            fuel = v.fuel or 100,
+            wear = wearInfo and wearInfo.wear or nil
         }
     end
 
-    lib.registerContext({
-        id = "haze_garage_context",
+    SetNuiFocus(true, true)
+    SendNUIMessage({
+        action = "openGarage",
         title = garage.label,
-        options = options
+        garageId = garageId,
+        vehicles = nuiVehicles
     })
-    lib.showContext("haze_garage_context")
+end)
+
+RegisterNUICallback("close", function(data, cb)
+    SetNuiFocus(false, false)
+    cb("ok")
+end)
+
+RegisterNUICallback("spawnVehicle", function(data, cb)
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = "closeGarage" })
+    TriggerEvent("haze_garages:client:spawnVehicle", data.plate, data.garageId)
+    cb("ok")
 end)
 
 RegisterNetEvent("haze_garages:client:spawnVehicle", function(plate, garageId)

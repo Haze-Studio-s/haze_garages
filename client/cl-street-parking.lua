@@ -85,6 +85,12 @@ RegisterNetEvent("haze_garages:client:refreshStreetVehicles", function()
             end,
             nearby = function(self)
                 if self.currentDistance < 3.0 and IsControlJustReleased(0, 38) then -- Key E to unpark
+                    local isOfflineLocked = lib.callback.await("haze_garages:server:checkVehicleOfflineLock", false, item.plate)
+                    if isOfflineLocked then
+                        Haze.Client.Notify(Locale.vehicle_offline_locked, "error")
+                        return
+                    end
+
                     local success = lib.callback.await("haze_garages:server:unparkStreetVehicle", false, item.plate)
                     if success and self.entity and DoesEntityExist(self.entity) then
                         FreezeEntityPosition(self.entity, false)

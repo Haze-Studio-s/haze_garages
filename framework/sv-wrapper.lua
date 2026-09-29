@@ -26,6 +26,47 @@ function Haze.Server.GetPlayerIdentifier(src)
     return nil
 end
 
+function Haze.Server.GetPlayerJob(src)
+    if GetResourceState('qbx_core') == 'started' and QBX then
+        local player = QBX:GetPlayer(src)
+        return player and player.PlayerData.job and player.PlayerData.job.name or "unemployed"
+    elseif GetResourceState('qb-core') == 'started' then
+        local QBCore = exports['qb-core']:GetCoreObject()
+        local player = QBCore.Functions.GetPlayer(src)
+        return player and player.PlayerData.job and player.PlayerData.job.name or "unemployed"
+    elseif GetResourceState('es_extended') == 'started' then
+        local ESX = exports['es_extended']:getSharedObject()
+        local xPlayer = ESX.GetPlayerFromId(src)
+        return xPlayer and xPlayer.job and xPlayer.job.name or "unemployed"
+    end
+    return "unemployed"
+end
+
+function Haze.Server.GetPlayerGang(src)
+    if GetResourceState('qbx_core') == 'started' and QBX then
+        local player = QBX:GetPlayer(src)
+        return player and player.PlayerData.gang and player.PlayerData.gang.name or "none"
+    elseif GetResourceState('qb-core') == 'started' then
+        local QBCore = exports['qb-core']:GetCoreObject()
+        local player = QBCore.Functions.GetPlayer(src)
+        return player and player.PlayerData.gang and player.PlayerData.gang.name or "none"
+    end
+    return "none"
+end
+
+function Haze.Server.IsPlayerOnlineByIdentifier(citizenid)
+    if not citizenid then return false end
+    if GetResourceState('qbx_core') == 'started' and QBX then
+        local player = QBX:GetPlayerByCitizenId(citizenid)
+        return player ~= nil
+    elseif GetResourceState('qb-core') == 'started' then
+        local QBCore = exports['qb-core']:GetCoreObject()
+        local player = QBCore.Functions.GetPlayerByCitizenId(citizenid)
+        return player ~= nil
+    end
+    return false
+end
+
 function Haze.Server.GetMoney(src)
     if GetResourceState('qbx_core') == 'started' and QBX then
         local player = QBX:GetPlayer(src)
@@ -70,6 +111,26 @@ function Haze.Server.RemoveMoney(src, amount)
         return false
     end
     return true
+end
+
+function Haze.Server.GiveKey(src, plate)
+    local cleanPlate = Haze.Shared.CleanPlate(plate)
+    if GetResourceState('qbx_vehiclekeys') == 'started' then
+        pcall(function()
+            exports.qbx_vehiclekeys:GiveKeys(src, cleanPlate)
+        end)
+    elseif GetResourceState('qb-vehiclekeys') == 'started' then
+        TriggerClientEvent('qb-vehiclekeys:client:AddKeys', src, cleanPlate)
+    end
+end
+
+function Haze.Server.RemoveKey(src, plate)
+    local cleanPlate = Haze.Shared.CleanPlate(plate)
+    if GetResourceState('qbx_vehiclekeys') == 'started' then
+        pcall(function()
+            exports.qbx_vehiclekeys:RemoveKeys(src, cleanPlate)
+        end)
+    end
 end
 
 function Haze.Server.Notify(src, msg, type)

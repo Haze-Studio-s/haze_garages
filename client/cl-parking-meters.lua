@@ -8,7 +8,9 @@ local function setupMeterTarget(entity, meterKey)
                 icon = "fas fa-parking",
                 label = "Pagar Parquímetro (1h - R$ " .. Config.ParkingMeterPricePerHour .. ")",
                 onSelect = function()
-                    lib.callback("haze_garages:server:payParkingMeter", false, function(success) end, meterKey, 1)
+                    local veh = GetVehiclePedIsIn(cache.ped or PlayerPedId(), false)
+                    local plate = (veh and veh ~= 0) and GetVehicleNumberPlateText(veh) or nil
+                    lib.callback("haze_garages:server:payParkingMeter", false, function(success) end, meterKey, 1, plate)
                 end
             },
             {
@@ -16,7 +18,21 @@ local function setupMeterTarget(entity, meterKey)
                 icon = "fas fa-clock",
                 label = "Pagar Parquímetro (10h - R$ " .. (Config.ParkingMeterPricePerHour * 10) .. ")",
                 onSelect = function()
-                    lib.callback("haze_garages:server:payParkingMeter", false, function(success) end, meterKey, 10)
+                    local veh = GetVehiclePedIsIn(cache.ped or PlayerPedId(), false)
+                    local plate = (veh and veh ~= 0) and GetVehicleNumberPlateText(veh) or nil
+                    lib.callback("haze_garages:server:payParkingMeter", false, function(success) end, meterKey, 10, plate)
+                end
+            },
+            {
+                name = "haze_meter_police_" .. meterKey,
+                icon = "fas fa-shield-alt",
+                label = "Fiscalizar Parquímetro (Polícia)",
+                groups = Config.PoliceJobs or { "police", "sheriff" },
+                onSelect = function()
+                    local success, res = lib.callback.await("haze_garages:server:policeInspectMeter", false, meterKey)
+                    if success and res then
+                        Haze.Client.Notify(res.message, res.expired and "error" or "success")
+                    end
                 end
             }
         })
@@ -50,17 +66,40 @@ AddEventHandler("haze_garages:client:init", function()
                 onSelect = function(data)
                     local eCoords = GetEntityCoords(data.entity)
                     local meterKey = string.format("native_meter_%.2f_%.2f", eCoords.x, eCoords.y)
-                    lib.callback("haze_garages:server:payParkingMeter", false, function(success) end, meterKey, 1)
+                    local veh = GetVehiclePedIsIn(cache.ped or PlayerPedId(), false)
+                    local plate = (veh and veh ~= 0) and GetVehicleNumberPlateText(veh) or nil
+                    lib.callback("haze_garages:server:payParkingMeter", false, function(success) end, meterKey, 1, plate)
                 end
             },
             {
-                name = "haze_native_meter_10h",
-                icon = "fas fa-clock",
-                label = "Pagar Parquímetro (10h)",
+                name = "haze_native_meter_police",
+                icon = "fas fa-shield-alt",
+                label = "Fiscalizar Parquímetro (Polícia)",
+                groups = Config.PoliceJobs or { "police", "sheriff" },
                 onSelect = function(data)
                     local eCoords = GetEntityCoords(data.entity)
                     local meterKey = string.format("native_meter_%.2f_%.2f", eCoords.x, eCoords.y)
-                    lib.callback("haze_garages:server:payParkingMeter", false, function(success) end, meterKey, 10)
+                    local success, res = lib.callback.await("haze_garages:server:policeInspectMeter", false, meterKey)
+                    if success and res then
+                        Haze.Client.Notify(res.message, res.expired and "error" or "success")
+                    end
+                end
+            }
+        })
+
+        -- Police target on parked vehicles to issue fine if expired
+        exports.ox_target:addGlobalVehicle({
+            {
+                name = "haze_police_fine_vehicle",
+                icon = "fas fa-file-invoice-dollar",
+                label = "Multar Estacionamento Irregular",
+                groups = Config.PoliceJobs or { "police", "sheriff" },
+                onSelect = function(data)
+                    local plate = GetVehicleNumberPlateText(data.entity)
+                    local success, msg = lib.callback.await("haze_garages:server:policeFineOwner", false, plate)
+                    if not success then
+                        Haze.Client.Notify(msg or "Erro ao aplicar multa.", "error")
+                    end
                 end
             }
         })
