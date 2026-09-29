@@ -7,6 +7,15 @@ local function clearStreetPoints()
     streetPoints = {}
 end
 
+local function safeDeleteVehicle(veh)
+    if not veh or not DoesEntityExist(veh) then return end
+    SetEntityAsMissionEntity(veh, true, true)
+    DeleteVehicle(veh)
+    if DoesEntityExist(veh) then
+        DeleteEntity(veh)
+    end
+end
+
 RegisterNetEvent("haze_garages:client:requestStreetPark", function()
     local ped = cache.ped or PlayerPedId()
     local veh = GetVehiclePedIsIn(ped, false)
@@ -37,6 +46,34 @@ RegisterNetEvent("haze_garages:client:requestStreetPark", function()
         model = model,
         props = props
     }
+
+    local check = lib.callback.await("haze_garages:server:checkStreetParkFee", false, vehData)
+    if not check or not check.isOwner then
+        Haze.Client.Notify(check and check.reason or Locale.not_vehicle_owner, "error")
+        return
+    end
+
+    if check.limitReached then
+        Haze.Client.Notify(check.reason, "error")
+        return
+    end
+
+    if check.fee and check.fee > 0 then
+        local alert = lib.alertDialog({
+            header = "Estacionamento de Rua",
+            content = string.format("Estacionar neste ponto de rua custará **%s%s**.\n\nDeseja confirmar o pagamento e estacionar o veículo?", Config.Currency or "R$", check.fee),
+            centered = true,
+            cancel = true,
+            labels = {
+                confirm = "Estacionar (Pagar)",
+                cancel = "Cancelar"
+            }
+        })
+        if alert ~= "confirm" then
+            Haze.Client.Notify("Estacionamento cancelado.", "info")
+            return
+        end
+    end
 
     local success, errReason = lib.callback.await("haze_garages:server:handleStreetPark", false, vehData)
     if success then
@@ -86,7 +123,7 @@ RegisterNetEvent("haze_garages:client:refreshStreetVehicles", function(existingV
             end,
             onLeave = function(self)
                 if self.entity and DoesEntityExist(self.entity) then
-                    DeleteEntity(self.entity)
+                    safeDeleteVehicle(self.entity)
                     self.entity = nil
                 end
             end,

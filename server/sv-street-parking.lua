@@ -72,6 +72,45 @@ RegisterCommand(Config.StreetParkCommand or "estacionar", function(source, args)
     TriggerClientEvent("haze_garages:client:requestStreetPark", src)
 end, false)
 
+lib.callback.register("haze_garages:server:checkStreetParkFee", function(source, vehData)
+    local src = source
+    if not vehData or not vehData.plate then return { fee = 0, isOwner = false } end
+
+    local citizenid = Haze.Server.GetPlayerIdentifier(src)
+    if not citizenid then return { fee = 0, isOwner = false } end
+
+    local cleanPlate = Haze.Shared.CleanPlate(vehData.plate)
+    local currentCoords = { x = vehData.x, y = vehData.y, z = vehData.z, w = vehData.heading }
+
+    local p = promise.new()
+    isPlayerVehicleOwner(citizenid, cleanPlate, function(isOwner)
+        p:resolve(isOwner)
+    end)
+    local isOwner = Citizen.Await(p)
+    if not isOwner then
+        return { fee = 0, isOwner = false, reason = Locale.not_vehicle_owner }
+    end
+
+    local existingRow = MySQL.single.await("SELECT * FROM haze_street_parking WHERE plate = ?", { cleanPlate })
+    if existingRow and existingRow.coords then
+        local savedCoords = json.decode(existingRow.coords)
+        local dist = Haze.Shared.GetDistance(currentCoords, savedCoords)
+        if dist > Config.DynamicSpotTolerance then
+            return { fee = Config.StreetParkingFee, isOwner = true, isReplaced = true }
+        else
+            return { fee = 0, isOwner = true, isFree = true }
+        end
+    else
+        local countRow = MySQL.single.await("SELECT COUNT(*) as total FROM haze_street_parking WHERE citizenid = ?", { citizenid })
+        local currentParkedCount = countRow and countRow.total or 0
+        local maxAllowed = getPlayerStreetParkLimit(src)
+        if currentParkedCount >= maxAllowed then
+            return { fee = 0, isOwner = true, limitReached = true, reason = string.format(Locale.street_park_limit_reached, currentParkedCount, maxAllowed) }
+        end
+        return { fee = Config.StreetParkingFee, isOwner = true, isNew = true }
+    end
+end)
+
 lib.callback.register("haze_garages:server:handleStreetPark", function(source, vehData)
     local src = source
     if not vehData or not vehData.plate then return false, "Dados inválidos." end
