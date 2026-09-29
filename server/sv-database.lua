@@ -4,11 +4,16 @@ MySQL.ready(function()
             plate VARCHAR(32) NOT NULL,
             citizenid VARCHAR(100) NOT NULL,
             coords TEXT NOT NULL,
+            model VARCHAR(64) DEFAULT NULL,
             cost_paid INT DEFAULT 0,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (plate)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ]])
+
+    pcall(function()
+        MySQL.query.await("ALTER TABLE haze_street_parking ADD COLUMN IF NOT EXISTS model VARCHAR(64) DEFAULT NULL;")
+    end)
 
     MySQL.query([[
         CREATE TABLE IF NOT EXISTS haze_fixed_garages (

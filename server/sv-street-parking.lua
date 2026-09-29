@@ -133,12 +133,13 @@ lib.callback.register("haze_garages:server:handleStreetPark", function(source, v
     end
 
     MySQL.query([[
-        REPLACE INTO haze_street_parking (plate, citizenid, coords, cost_paid)
-        VALUES (?, ?, ?, ?)
+        REPLACE INTO haze_street_parking (plate, citizenid, coords, model, cost_paid)
+        VALUES (?, ?, ?, ?, ?)
     ]], {
         cleanPlate,
         citizenid,
         json.encode(currentCoords),
+        tostring(vehData.model or ""),
         feeRequired
     })
 
@@ -172,13 +173,19 @@ lib.callback.register("haze_garages:server:checkVehicleOfflineLock", function(so
 end)
 
 lib.callback.register("haze_garages:server:getStreetParkedVehicles", function(source)
-    local rows = MySQL.query.await("SELECT * FROM haze_street_parking")
+    local rows = MySQL.query.await([[
+        SELECT s.plate, s.citizenid, s.coords, s.model AS street_model, p.vehicle AS pv_model 
+        FROM haze_street_parking s 
+        LEFT JOIN player_vehicles p ON s.plate = p.plate
+    ]])
     local result = {}
     for _, row in ipairs(rows or {}) do
+        local modelToUse = (row.street_model and row.street_model ~= "") and row.street_model or row.pv_model
         result[#result + 1] = {
             plate = row.plate,
             citizenid = row.citizenid,
-            coords = json.decode(row.coords)
+            coords = json.decode(row.coords),
+            model = modelToUse
         }
     end
     return result

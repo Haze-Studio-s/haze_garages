@@ -23,8 +23,16 @@ function Haze.Shared.GetModelHash(model)
     if not model then return nil end
     local num = tonumber(model)
     if num then
-        return math.floor(num)
+        num = math.floor(num)
+        if num < 0 then
+            num = num % 0x100000000
+        end
+        return num
     end
-    return joaat(tostring(model))
+    local hash = joaat(tostring(model))
+    if type(hash) == 'number' and hash < 0 then
+        hash = hash % 0x100000000
+    end
+    return hash
 end
 
