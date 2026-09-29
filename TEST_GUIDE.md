@@ -1,5 +1,7 @@
 # 🧪 Guia Completo de Testes — haze_garages
 
+
+
 Este documento apresenta o protocolo oficial de testes e validação de qualidade (QA) para o recurso **`haze_garages`**.
 
 ---
