@@ -1,7 +1,5 @@
 # 🧪 Guia Completo de Testes — haze_garages
 
-
-
 Este documento apresenta o protocolo oficial de testes e validação de qualidade (QA) para o recurso **`haze_garages`**.
 
 ---
@@ -15,7 +13,7 @@ Antes de iniciar os testes, certifique-se de que os seguintes pontos foram cumpr
 - [x] O item `parking_ticket` está registrado no `ox_inventory/data/items.lua`.
 - [x] O MySQL (`oxmysql`) está rodando normalmente.
 
----
+---gg
 
 ## 🧪 Roteiro de Testes por Módulo
 
