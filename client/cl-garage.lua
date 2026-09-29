@@ -114,11 +114,7 @@ RegisterNetEvent("haze_garages:client:spawnVehicle", function(plate, garageId)
     SetVehicleNumberPlateText(veh, payload.plate)
 
     if payload.mods then
-        if exports.qbx_core then
-            exports.qbx_core:setVehicleProperties(veh, payload.mods)
-        elseif exports['qb-core'] then
-            exports['qb-core']:GetCoreObject().Functions.SetVehicleProperties(veh, payload.mods)
-        end
+        Haze.Client.SetVehicleProperties(veh, payload.mods)
     end
 
     if payload.deformation or payload.mechanical then

@@ -26,12 +26,7 @@ RegisterNetEvent("haze_garages:client:requestStreetPark", function()
     local heading = GetEntityHeading(veh)
     local model = GetEntityModel(veh)
 
-    local props = {}
-    if exports.qbx_core then
-        props = exports.qbx_core:getVehicleProperties(veh)
-    elseif exports['qb-core'] then
-        props = exports['qb-core']:GetCoreObject().Functions.GetVehicleProperties(veh)
-    end
+    local props = Haze.Client.GetVehicleProperties(veh)
 
     local vehData = {
         plate = plate,
