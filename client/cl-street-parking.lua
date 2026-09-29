@@ -85,6 +85,14 @@ RegisterNetEvent("haze_garages:client:requestStreetPark", function()
             SetVehicleDoorsLocked(veh, 2)
         end
         TriggerEvent("haze_garages:client:refreshStreetVehicles", veh)
+
+        -- Despawn automático do veículo físico 90 segundos após estacionar
+        CreateThread(function()
+            Wait(90000)
+            if DoesEntityExist(veh) then
+                safeDeleteVehicle(veh)
+            end
+        end)
     else
         Haze.Client.Notify(errReason or "Erro ao estacionar.", "error")
     end
