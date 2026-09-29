@@ -41,28 +41,39 @@ RegisterNetEvent("haze_garages:client:requestStreetPark", function()
     local success, errReason = lib.callback.await("haze_garages:server:handleStreetPark", false, vehData)
     if success then
         TaskLeaveVehicle(ped, veh, 0)
-        Wait(1000)
+        Wait(1500)
         if DoesEntityExist(veh) then
-            DeleteEntity(veh)
+            SetEntityAsMissionEntity(veh, true, true)
+            FreezeEntityPosition(veh, true)
+            SetVehicleDoorsLocked(veh, 2)
         end
-        TriggerEvent("haze_garages:client:refreshStreetVehicles")
+        TriggerEvent("haze_garages:client:refreshStreetVehicles", veh)
     else
         Haze.Client.Notify(errReason or "Erro ao estacionar.", "error")
     end
 end)
 
-RegisterNetEvent("haze_garages:client:refreshStreetVehicles", function()
+RegisterNetEvent("haze_garages:client:refreshStreetVehicles", function(existingVeh)
     clearStreetPoints()
 
     local vehicles = lib.callback.await("haze_garages:server:getStreetParkedVehicles", false)
     for _, item in ipairs(vehicles or {}) do
         local spotCoords = vec3(item.coords.x, item.coords.y, item.coords.z)
+        local cleanItemPlate = Haze.Shared.CleanPlate(item.plate)
 
         local point = lib.points.new({
             coords = spotCoords,
             distance = 60.0,
             onEnter = function(self)
                 if not self.entity or not DoesEntityExist(self.entity) then
+                    if existingVeh and DoesEntityExist(existingVeh) then
+                        local cleanExistingPlate = Haze.Shared.CleanPlate(GetVehicleNumberPlateText(existingVeh))
+                        if cleanExistingPlate == cleanItemPlate then
+                            self.entity = existingVeh
+                            return
+                        end
+                    end
+
                     local modelHash = Haze.Shared.GetModelHash(item.model or "adder")
                     Haze.Client.RequestModel(modelHash)
                     local veh = CreateVehicle(modelHash, item.coords.x, item.coords.y, item.coords.z, item.coords.w or 0.0, false, false)
