@@ -18,3 +18,13 @@ end
 function Haze.Shared.FormatMoney(amount)
     return string.format("%s%s", Config.Currency or "R$", amount)
 end
+
+function Haze.Shared.GetModelHash(model)
+    if not model then return nil end
+    local num = tonumber(model)
+    if num then
+        return math.floor(num)
+    end
+    return joaat(tostring(model))
+end
+

@@ -63,8 +63,9 @@ RegisterNetEvent("haze_garages:client:refreshStreetVehicles", function()
             distance = 60.0,
             onEnter = function(self)
                 if not self.entity or not DoesEntityExist(self.entity) then
-                    lib.requestModel(item.model or "adder")
-                    local veh = CreateVehicle(item.model or joaat("adder"), item.coords.x, item.coords.y, item.coords.z, item.coords.w or 0.0, false, false)
+                    local modelHash = Haze.Shared.GetModelHash(item.model or "adder")
+                    Haze.Client.RequestModel(modelHash)
+                    local veh = CreateVehicle(modelHash, item.coords.x, item.coords.y, item.coords.z, item.coords.w or 0.0, false, false)
                     SetVehicleNumberPlateText(veh, item.plate)
                     SetEntityAsMissionEntity(veh, true, true)
                     FreezeEntityPosition(veh, true)

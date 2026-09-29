@@ -108,9 +108,10 @@ RegisterNetEvent("haze_garages:client:spawnVehicle", function(plate, garageId)
     end
 
     local coords = payload.spawnCoords
-    lib.requestModel(payload.model)
+    local modelHash = Haze.Shared.GetModelHash(payload.model)
+    Haze.Client.RequestModel(modelHash)
 
-    local veh = CreateVehicle(joaat(payload.model), coords.x, coords.y, coords.z, coords.w, true, false)
+    local veh = CreateVehicle(modelHash, coords.x, coords.y, coords.z, coords.w, true, false)
     SetVehicleNumberPlateText(veh, payload.plate)
 
     if payload.mods then

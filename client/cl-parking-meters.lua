@@ -46,8 +46,9 @@ AddEventHandler("haze_garages:client:init", function()
     spawnedCustomMeters = {}
 
     for i, meter in ipairs(Config.CustomParkingMeters or {}) do
-        lib.requestModel(meter.model)
-        local obj = CreateObject(joaat(meter.model), meter.coords.x, meter.coords.y, meter.coords.z - 1.0, false, false, false)
+        local modelHash = Haze.Shared.GetModelHash(meter.model)
+        Haze.Client.RequestModel(modelHash)
+        local obj = CreateObject(modelHash, meter.coords.x, meter.coords.y, meter.coords.z - 1.0, false, false, false)
         SetEntityHeading(obj, meter.coords.w or 0.0)
         FreezeEntityPosition(obj, true)
         SetEntityInvincible(obj, true)
