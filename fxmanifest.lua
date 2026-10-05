@@ -4,7 +4,6 @@ lua54 'yes'
 
 name 'haze_garages'
 author 'Haze Studios'
-description 'Sistema Unificado de Garagens, Estacionamento de Rua Persistente e Parquímetros'
 version '1.0.0'
 
 shared_scripts {
