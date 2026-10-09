@@ -48,7 +48,7 @@ Este documento é o **guia oficial de testes passo a passo** para homologação 
 ### 🔹 Teste 4: Comando de Menu Geral `/listarveiculos`
 1. Execute o comando `/listarveiculos` no chat.
 2. **Resultado Esperado**:
-   - Menu contextual `ox_lib` abre listando todos os seus veículos cadastrados no servidor sem erros de SQL.
+   - Menu contextual `ox_lib` abre listando todos os seus veículos cadastrados no servidor sem erros de SQL ou Collation.
    - Exibe status ("Garagem Legion", "Estacionado na Rua", "Em Uso", "Apreendido").
    - Exibe saúde do motor, lataria, combustível, quilometragem e peças do `granolla_mechanic` (velas, freios, óleo, etc.).
 3. Se um carro estiver estacionado na rua distante, clique nele no menu.
@@ -60,11 +60,11 @@ Este documento é o **guia oficial de testes passo a passo** para homologação 
 
 ### 🔹 Teste 5: Estacionamento Dinâmico de Rua (`/estacionar`)
 1. **Ponto Novo (1ª Vez)**: Entre em um veículo de sua propriedade, pare em qualquer rua e digite `/estacionar`.
-   - **Resultado Esperado**: Exibe aviso de cobrança de taxa de R$ 250. Ao confirmar, o valor é debitado, a vaga é salva e o veículo físico despawna da tela em exatamente 60 segundos.
+   - **Resultado Esperado**: Exibe aviso de cobrança de taxa de $250. Ao confirmar, o valor é debitado, a vaga é salva e o veículo físico despawna da tela em exatamente 60 segundos.
 2. **Retorno ao Mesmo Ponto**: Pegue o carro, dê uma volta curta e estacione de novo no mesmo local (raio de 10 metros).
    - **Resultado Esperado**: **Gratuito!** Notifica que é sua vaga cadastrada e não cobra taxa.
 3. **Troca de Vaga de Rua**: Dirija para outro bairro (> 10m) e digite `/estacionar`.
-   - **Resultado Esperado**: Atualiza sua vaga de rua para o novo local e cobra a taxa de R$ 250.
+   - **Resultado Esperado**: Atualiza sua vaga de rua para o novo local e cobra a taxa de $250.
 4. **Trava de Dono Offline com Chamado Policial**: Estacione na rua, deslogue do servidor. Peça a outro jogador para tentar arrombar/usar o veículo.
    - **Resultado Esperado**:
      - Veículo bloqueado com mensagem **"Veículo protegido contra arrombamentos"**.
@@ -77,7 +77,7 @@ Este documento é o **guia oficial de testes passo a passo** para homologação 
 2. Mire com `ox_target` no parquímetro.
 3. **Resultado Esperado**:
    - Se o parquímetro NÃO estiver pago, mostra no target **"🔴 Parquímetro NÃO PAGO"**.
-   - Ao selecionar **"Pagar Parquímetro (1h - R$ 50)"**, R$ 50 são debitados e o jogador recebe o item `parking_ticket` no inventário com metadados do pagador e validade.
+   - Ao selecionar **"Pagar Parquímetro (1h - $50)"**, $50 são debitados e o jogador recebe o item `parking_ticket` no inventário com metadados do pagador e validade.
    - Ao mirar novamente no parquímetro pago, o target passa a exibir diretamente **"🟢 Parquímetro PAGO (Ver Tempo)"** informando os minutos restantes.
 
 ---
@@ -93,7 +93,7 @@ Este documento é o **guia oficial de testes passo a passo** para homologação 
      - **Nome completo do pagador**
      - **Número de telefone do pagador**
 4. Mire com `ox_target` em um veículo cujo tempo do parquímetro expirou e escolha **"Multar Estacionamento Irregular"**.
-   - **Resultado Esperado**: Emite multa de R$ 500 debitando da conta bancária do dono do veículo.
+   - **Resultado Esperado**: Emite multa de $500 debitando da conta bancária do dono do veículo.
 
 ---
 

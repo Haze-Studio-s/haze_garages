@@ -1,4 +1,12 @@
 MySQL.ready(function()
+    pcall(function()
+        MySQL.query.await("ALTER TABLE haze_street_parking CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;")
+        MySQL.query.await("ALTER TABLE haze_fixed_garages CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;")
+        MySQL.query.await("ALTER TABLE haze_parking_meters CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;")
+        MySQL.query.await("ALTER TABLE haze_vehicle_deformations CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;")
+        MySQL.query.await("ALTER TABLE granolla_vehicle_wear CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;")
+    end)
+
     MySQL.query([[
         CREATE TABLE IF NOT EXISTS haze_street_parking (
             plate VARCHAR(32) NOT NULL,
@@ -8,7 +16,7 @@ MySQL.ready(function()
             cost_paid INT DEFAULT 0,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (plate)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ]])
 
     pcall(function()
@@ -23,7 +31,7 @@ MySQL.ready(function()
             citizenid VARCHAR(100) NOT NULL,
             purchased_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             UNIQUE KEY (garage_id, citizenid)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ]])
 
     MySQL.query([[
@@ -35,7 +43,7 @@ MySQL.ready(function()
             payer_name VARCHAR(100) DEFAULT NULL,
             payer_phone VARCHAR(50) DEFAULT NULL,
             citizenid VARCHAR(100) DEFAULT NULL
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ]])
 
     pcall(function()
@@ -51,7 +59,7 @@ MySQL.ready(function()
             mechanical_damage LONGTEXT NULL,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (plate)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ]])
 
     MySQL.query([[
@@ -61,7 +69,7 @@ MySQL.ready(function()
             mileage FLOAT DEFAULT 0.0,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (plate)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ]])
 
     print("^2[Haze Garages]^7 Tabelas de banco de dados inicializadas e verificadas com sucesso.")

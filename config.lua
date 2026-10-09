@@ -2,7 +2,7 @@ Config = {}
 
 -- Idioma e Identificação
 Config.Locale = "pt-BR"
-Config.Currency = "R$"
+Config.Currency = "$"
 
 -- Framework & Integrações
 Config.Framework = "auto" -- "auto" (detecta qbx_core, qb-core ou ESX)

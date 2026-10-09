@@ -16,23 +16,14 @@ function Haze.Shared.GetDistance(coords1, coords2)
 end
 
 function Haze.Shared.FormatMoney(amount)
-    return string.format("%s%s", Config.Currency or "R$", amount)
+    return string.format("%s%s", Config.Currency or "$", amount)
 end
 
 function Haze.Shared.GetModelHash(model)
     if not model then return nil end
+    if type(model) == "number" then return math.floor(model) end
     local num = tonumber(model)
-    if num then
-        num = math.floor(num)
-        if num < 0 then
-            num = num % 0x100000000
-        end
-        return num
-    end
-    local hash = joaat(tostring(model))
-    if type(hash) == 'number' and hash < 0 then
-        hash = hash % 0x100000000
-    end
-    return hash
+    if num then return math.floor(num) end
+    return joaat(tostring(model))
 end
 

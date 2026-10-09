@@ -36,9 +36,10 @@ lib.callback.register("haze_garages:server:getUserVehicles", function(source, ga
     local rows = MySQL.query.await([[
         SELECT pv.*, hsd.deformation, hsd.mechanical_damage
         FROM player_vehicles pv
-        LEFT JOIN haze_vehicle_deformations hsd ON hsd.plate = pv.plate
-        WHERE pv.citizenid = ? AND (pv.state = 1 OR pv.garage = ?)
-    ]], { citizenid, garageId })
+        LEFT JOIN haze_vehicle_deformations hsd ON hsd.plate COLLATE utf8mb4_unicode_ci = pv.plate COLLATE utf8mb4_unicode_ci
+        WHERE (pv.citizenid IS NOT NULL AND pv.citizenid COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci)
+           OR (pv.license IS NOT NULL AND pv.license COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci)
+    ]], { citizenid or "NONE", citizenid or "NONE" })
 
     return rows or {}
 end)
@@ -150,11 +151,11 @@ lib.callback.register("haze_garages:server:getDetailedPlayerVehicles", function(
                gvw.wear_data,
                gvw.mileage
         FROM player_vehicles pv
-        LEFT JOIN haze_street_parking hsp ON hsp.plate = pv.plate
-        LEFT JOIN haze_vehicle_deformations hsd ON hsd.plate = pv.plate
-        LEFT JOIN granolla_vehicle_wear gvw ON gvw.plate = pv.plate
-        WHERE (pv.citizenid IS NOT NULL AND pv.citizenid = ?)
-           OR (pv.license IS NOT NULL AND pv.license = ?)
+        LEFT JOIN haze_street_parking hsp ON hsp.plate COLLATE utf8mb4_unicode_ci = pv.plate COLLATE utf8mb4_unicode_ci
+        LEFT JOIN haze_vehicle_deformations hsd ON hsd.plate COLLATE utf8mb4_unicode_ci = pv.plate COLLATE utf8mb4_unicode_ci
+        LEFT JOIN granolla_vehicle_wear gvw ON gvw.plate COLLATE utf8mb4_unicode_ci = pv.plate COLLATE utf8mb4_unicode_ci
+        WHERE (pv.citizenid IS NOT NULL AND pv.citizenid COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci)
+           OR (pv.license IS NOT NULL AND pv.license COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci)
     ]], { citizenid or "NONE", license or "NONE" })
 
     print(string.format("^2[Haze Garages]^7 Total de veículos encontrados no DB: %d", #(pvRows or {})))
