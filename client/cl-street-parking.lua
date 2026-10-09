@@ -144,7 +144,6 @@ RegisterNetEvent("haze_garages:client:refreshStreetVehicles", function(existingV
                     if success and self.entity and DoesEntityExist(self.entity) then
                         FreezeEntityPosition(self.entity, false)
                         SetVehicleDoorsLocked(self.entity, 1)
-                        TaskWarpPedIntoVehicle(cache.ped or PlayerPedId(), self.entity, -1)
                         self.entity = nil
                         self:remove()
                     end

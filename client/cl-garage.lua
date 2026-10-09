@@ -124,7 +124,6 @@ RegisterNetEvent("haze_garages:client:spawnVehicle", function(plate, garageId)
         TriggerEvent("haze_garages:client:applyVehicleDeformation", veh, payload.deformation, payload.mechanical)
     end
 
-    TaskWarpPedIntoVehicle(cache.ped or PlayerPedId(), veh, -1)
     Haze.Client.Notify(Locale.vehicle_spawned, "success")
 end)
 
@@ -223,11 +222,6 @@ RegisterCommand("listarveiculos", function()
 
                     if payload.deformation or payload.mechanical then
                         TriggerEvent("haze_garages:client:applyVehicleDeformation", veh, payload.deformation, payload.mechanical)
-                    end
-
-                    local distToPed = #(currentPedCoords - vec3(spawnCoords.x, spawnCoords.y, spawnCoords.z))
-                    if distToPed < 15.0 then
-                        TaskWarpPedIntoVehicle(currentPed, veh, -1)
                     end
 
                     Haze.Client.Notify("Veículo retirado com sucesso!", "success")
