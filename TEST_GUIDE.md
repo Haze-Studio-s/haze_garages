@@ -26,13 +26,14 @@ Este documento é o **guia oficial de testes passo a passo** para homologação 
 
 ---
 
-### 🔹 Teste 2: Garagens Fixas & Terminal Prop 3D
+### 🔹 Teste 2: Garagens Fixas & Atendente Ped NPC
 1. Dirija-se à Garagem Central da Praça Legion (`coords: 215.12, -810.55, 30.7`).
-2. Observe o prop do terminal (`prop_parkstat_01`) gerado visível no solo.
-3. Mire no prop com `ox_target` ou pressione `[E]` ao se aproximar.
+2. Observe o NPC atendente (`a_m_y_business_01`) spawnado no local.
+3. Mire no NPC com `ox_target` ou pressione `[E]` ao se aproximar.
 4. **Resultado Esperado**:
    - Interface NUI ou menu abre exibindo seus veículos salvos.
-   - Ao selecionar e spawnar um carro, ele surge na vaga (`spawnCoords: 222.10, -805.20, 30.6`), as chaves são concedidas via `qbx_vehiclekeys` e o ped é teleportado para o banco do motorista.
+   - Ao selecionar e spawnar um carro, ele surge na vaga (`spawnCoords: 222.10, -805.20, 30.6`), as chaves são concedidas via `qbx_vehiclekeys` e o jogador pode entrar e dirigir.
+
 
 ---
 

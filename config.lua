@@ -51,8 +51,9 @@ Config.CustomParkingMeters = {
     }
 }
 
--- Adereços de Terminal para Garagens Fixas (Substitui peds por props)
-Config.GarageTerminalProp = "prop_parkstat_01"
+-- Atendentes/NPCs (Peds) de Garagens Fixas
+Config.GaragePedModel = "a_m_y_business_01"
+
 
 -- Garagens Fixas no Mapa (Públicas, Corporativas/Job e Gangues)
 Config.FixedGarages = {

@@ -1,53 +1,71 @@
-local spawnedGarageProps = {}
+local spawnedGaragePeds = {}
+
+local function cleanupGaragePeds()
+    for _, ped in ipairs(spawnedGaragePeds) do
+        if DoesEntityExist(ped) then
+            DeleteEntity(ped)
+        end
+    end
+    spawnedGaragePeds = {}
+end
+
+AddEventHandler("onResourceStop", function(resourceName)
+    if GetCurrentResourceName() == resourceName then
+        cleanupGaragePeds()
+    end
+end)
 
 AddEventHandler("haze_garages:client:init", function()
-    for id, prop in ipairs(spawnedGarageProps) do
-        if DoesEntityExist(prop) then DeleteEntity(prop) end
-    end
-    spawnedGarageProps = {}
+    cleanupGaragePeds()
 
     for garageId, garageData in pairs(Config.FixedGarages or {}) do
-        local propModel = Config.GarageTerminalProp or "prop_parkstat_01"
-        local propHash = Haze.Shared.GetModelHash(propModel)
-        Haze.Client.RequestModel(propHash)
+        local pedModel = garageData.pedModel or Config.GaragePedModel or "a_m_y_business_01"
+        local pedHash = Haze.Shared.GetModelHash(pedModel)
 
-        local prop = CreateObject(propHash, garageData.coords.x, garageData.coords.y, garageData.coords.z, false, false, false)
-        SetEntityHeading(prop, garageData.coords.w or 0.0)
-        PlaceObjectOnGroundProperly(prop)
-        FreezeEntityPosition(prop, true)
-        SetEntityInvincible(prop, true)
-        spawnedGarageProps[#spawnedGarageProps + 1] = prop
+        if pedHash and Haze.Client.RequestModel(pedHash) then
+            local ped = CreatePed(4, pedHash, garageData.coords.x, garageData.coords.y, garageData.coords.z - 1.0, garageData.coords.w or 0.0, false, false)
+            SetEntityHeading(ped, garageData.coords.w or 0.0)
+            FreezeEntityPosition(ped, true)
+            SetEntityInvincible(ped, true)
+            SetBlockingOfNonTemporaryEvents(ped, true)
+            SetPedDiesWhenInjured(ped, false)
+            SetPedCanPlayAmbientAnims(ped, true)
+            SetPedCanRagdollFromPlayerImpact(ped, false)
 
-        if exports.ox_target then
-            exports.ox_target:addLocalEntity(prop, {
-                {
-                    name = "haze_garage_" .. garageId,
-                    icon = "fas fa-warehouse",
-                    label = garageData.label,
-                    onSelect = function()
-                        TriggerEvent("haze_garages:client:openGarageMenu", garageId)
+            spawnedGaragePeds[#spawnedGaragePeds + 1] = ped
+
+            if exports.ox_target then
+                exports.ox_target:addLocalEntity(ped, {
+                    {
+                        name = "haze_garage_" .. garageId,
+                        icon = "fas fa-warehouse",
+                        label = garageData.label,
+                        onSelect = function()
+                            TriggerEvent("haze_garages:client:openGarageMenu", garageId)
+                        end
+                    }
+                })
+            else
+                lib.points.new({
+                    coords = vec3(garageData.coords.x, garageData.coords.y, garageData.coords.z),
+                    distance = 3.0,
+                    onEnter = function()
+                        lib.showTextUI(Locale.garage_open_prompt)
+                    end,
+                    onLeave = function()
+                        lib.hideTextUI()
+                    end,
+                    nearby = function()
+                        if IsControlJustReleased(0, 38) then -- Key E
+                            TriggerEvent("haze_garages:client:openGarageMenu", garageId)
+                        end
                     end
-                }
-            })
-        else
-            lib.points.new({
-                coords = vec3(garageData.coords.x, garageData.coords.y, garageData.coords.z),
-                distance = 3.0,
-                onEnter = function()
-                    lib.showTextUI(Locale.garage_open_prompt)
-                end,
-                onLeave = function()
-                    lib.hideTextUI()
-                end,
-                nearby = function()
-                    if IsControlJustReleased(0, 38) then -- Key E
-                        TriggerEvent("haze_garages:client:openGarageMenu", garageId)
-                    end
-                end
-            })
+                })
+            end
         end
     end
 end)
+
 
 RegisterNetEvent("haze_garages:client:openGarageMenu", function(garageId)
     local garage = Config.FixedGarages[garageId]
