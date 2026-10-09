@@ -259,3 +259,66 @@ RegisterNetEvent("haze_garages:server:giveVehicleKeys", function(netId, plate)
     local src = source
     Haze.Server.GiveKey(src, plate, netId)
 end)
+
+lib.callback.register("haze_garages:server:dvStoreVehicle", function(source, cleanPlate, coords, props, deformationData, mechanicalData)
+    if not cleanPlate or cleanPlate == "" then
+        return { success = false, reason = "invalid_plate" }
+    end
+
+    local cleanPlate = Haze.Shared.CleanPlate(cleanPlate)
+    local pvRow = MySQL.single.await("SELECT plate, citizenid FROM player_vehicles WHERE plate = ?", { cleanPlate })
+
+    if not pvRow then
+        return { success = true, isPlayerVehicle = false, plate = cleanPlate }
+    end
+
+    local nearestGarageId = Haze.Shared.FindNearestFixedGarage(coords)
+    local garageData = Config.FixedGarages[nearestGarageId]
+    local garageLabel = garageData and garageData.label or nearestGarageId
+
+    if props then
+        MySQL.query.await("UPDATE player_vehicles SET mods = ?, state = 1, garage = ? WHERE plate = ?", { json.encode(props), nearestGarageId, cleanPlate })
+    else
+        MySQL.query.await("UPDATE player_vehicles SET state = 1, garage = ? WHERE plate = ?", { nearestGarageId, cleanPlate })
+    end
+
+    MySQL.query.await("DELETE FROM haze_street_parking WHERE plate = ?", { cleanPlate })
+
+    if deformationData or mechanicalData then
+        MySQL.query.await([[
+            REPLACE INTO haze_vehicle_deformations (plate, deformation, mechanical_damage)
+            VALUES (?, ?, ?)
+        ]], {
+            cleanPlate,
+            deformationData and json.encode(deformationData) or nil,
+            mechanicalData and json.encode(mechanicalData) or nil
+        })
+    end
+
+    Haze.Server.RemoveKey(source, cleanPlate)
+
+    print(string.format("^3[Haze Garages]^7 Veículo %s guardado via DV na garagem mais próxima: %s (%s)", cleanPlate, garageLabel, nearestGarageId))
+
+    return {
+        success = true,
+        isPlayerVehicle = true,
+        garageId = nearestGarageId,
+        garageLabel = garageLabel,
+        plate = cleanPlate
+    }
+end)
+
+lib.addCommand({'dv', 'deleteveh'}, {
+    help = "Deleta o veículo e envia veículo de jogador para a garagem mais próxima.",
+    params = {
+        { name = "radius", help = "Raio em metros (opcional, padrão 5m)", type = "number", optional = true }
+    },
+    restricted = Config.DVCommandRestricted or false
+}, function(source, args)
+    if source == 0 then
+        print("^1[Haze Garages]^7 O comando /dv deve ser executado no jogo.")
+        return
+    end
+    TriggerClientEvent("haze_garages:client:dvCommand", source, args and args.radius)
+end)
+

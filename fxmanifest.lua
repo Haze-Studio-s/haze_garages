@@ -39,3 +39,9 @@ files {
     'web/style.css',
     'web/app.js'
 }
+
+exports {
+    'dvVehicle',
+    'StoreVehicleNearestGarage'
+}
+

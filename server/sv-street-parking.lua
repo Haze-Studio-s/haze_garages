@@ -7,21 +7,6 @@ local function isPlayerVehicleOwner(citizenid, plate, cb)
     end)
 end
 
-local function findNearestFixedGarage(coords)
-    local nearestId = "legion_square"
-    local minDistance = 999999.0
-
-    for garageId, gData in pairs(Config.FixedGarages or {}) do
-        if gData.category == "car" or not gData.category then
-            local dist = Haze.Shared.GetDistance(coords, gData.coords)
-            if dist < minDistance then
-                minDistance = dist
-                nearestId = garageId
-            end
-        end
-    end
-    return nearestId
-end
 
 local function getPlayerStreetParkLimit(src)
     local limits = Config.StreetParkVIPLimits or { default = 1 }
@@ -45,7 +30,8 @@ local function checkExpiredStreetParkings()
 
     for _, row in ipairs(rows or {}) do
         local spotCoords = json.decode(row.coords)
-        local nearestGarage = findNearestFixedGarage(spotCoords)
+        local nearestGarage = Haze.Shared.FindNearestFixedGarage(spotCoords)
+
 
         MySQL.query("UPDATE player_vehicles SET state = 1, garage = ? WHERE plate = ?", { nearestGarage, row.plate })
         MySQL.query("DELETE FROM haze_street_parking WHERE plate = ?", { row.plate })

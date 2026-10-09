@@ -105,4 +105,18 @@ Este documento é o **guia oficial de testes passo a passo** para homologação 
 
 ---
 
+### 🔹 Teste 9: Remoção de Veículo com Envio Automático para Garagem Mais Próxima (`/dv` / `/deleteveh`)
+1. Spawne ou pegue um veículo de sua propriedade em qualquer parte do mapa (ex: próximo a Legion Square, Pillbox ou delegacia).
+2. Entre no veículo ou fique próximo a ele (raio até 5m) e execute o comando `/dv` ou `/deleteveh`.
+3. **Resultado Esperado**:
+   - Se o veículo pertence a um jogador (`player_vehicles`), suas propriedades (customizações, danos, combustível) são salvas.
+   - O estado do veículo é atualizado para `state = 1` (guardado) e vinculado à **garagem fixa mais próxima por distância 3D**.
+   - Se o veículo estava cadastrado em vaga de rua (`haze_street_parking`), o registro de rua é limpo.
+   - Uma notificação é exibida: `"Veículo [PLACA] guardado na garagem mais próxima (Nome da Garagem)."`
+   - Ao ir até a garagem indicada no aviso e abrir o menu, o veículo estará disponível para retirada em perfeito estado.
+   - Se o veículo for de NPC/ambiente, ele é deletado exibindo `"Veículo [PLACA] deletado."`
+
+---
+
 *Haze Studios © 2026.*
+

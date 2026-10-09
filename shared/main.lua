@@ -27,3 +27,27 @@ function Haze.Shared.GetModelHash(model)
     return joaat(tostring(model))
 end
 
+function Haze.Shared.FindNearestFixedGarage(coords)
+    local nearestId = "legion_square"
+    local minDistance = 999999.0
+
+    if not coords then return nearestId end
+    local cX = coords.x or (coords[1] or 0)
+    local cY = coords.y or (coords[2] or 0)
+    local cZ = coords.z or (coords[3] or 0)
+    local vecCoords = vec3(cX, cY, cZ)
+
+    for garageId, gData in pairs(Config.FixedGarages or {}) do
+        if gData.category == "car" or not gData.category then
+            local gCoords = vec3(gData.coords.x, gData.coords.y, gData.coords.z)
+            local dist = #(vecCoords - gCoords)
+            if dist < minDistance then
+                minDistance = dist
+                nearestId = garageId
+            end
+        end
+    end
+    return nearestId
+end
+
+

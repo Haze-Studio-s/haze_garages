@@ -246,3 +246,65 @@ RegisterCommand("listarveiculos", function()
 
     lib.showContext("haze_garages_list_vehicles")
 end, false)
+
+local function processVehicleDV(veh)
+    if not veh or not DoesEntityExist(veh) then return false end
+
+    local coords = GetEntityCoords(veh)
+    local rawPlate = GetVehicleNumberPlateText(veh)
+    local cleanPlate = Haze.Shared.CleanPlate(rawPlate)
+    local props = Haze.Client.GetVehicleProperties(veh)
+
+    local deformationData, mechanicalData = nil, nil
+    if Haze.Client.GetVehicleDeformation then
+        pcall(function()
+            deformationData, mechanicalData = Haze.Client.GetVehicleDeformation(veh)
+        end)
+    end
+
+    local result = lib.callback.await("haze_garages:server:dvStoreVehicle", false, cleanPlate, coords, props, deformationData, mechanicalData)
+
+    SetEntityAsMissionEntity(veh, true, true)
+    local tries = 0
+    while DoesEntityExist(veh) and tries < 20 do
+        NetworkRequestControlOfEntity(veh)
+        DeleteVehicle(veh)
+        DeleteEntity(veh)
+        Wait(50)
+        tries = tries + 1
+    end
+
+    if result and result.isPlayerVehicle then
+        Haze.Client.Notify(string.format("Veículo [%s] guardado na garagem mais próxima (%s).", cleanPlate, result.garageLabel or "Garagem"), "success")
+    else
+        Haze.Client.Notify(string.format("Veículo [%s] deletado.", cleanPlate), "info")
+    end
+
+    return true
+end
+
+RegisterNetEvent("haze_garages:client:dvCommand", function(radiusArg)
+    local ped = cache.ped or PlayerPedId()
+    local pedVeh = GetVehiclePedIsIn(ped, false)
+
+    if pedVeh and pedVeh ~= 0 then
+        processVehicleDV(pedVeh)
+        return
+    end
+
+    local radius = radiusArg and tonumber(radiusArg) or 5.0
+    if radius > 50.0 then radius = 50.0 end
+
+    local pedCoords = GetEntityCoords(ped)
+    local closestVeh = lib.getClosestVehicle(pedCoords, radius, true)
+
+    if closestVeh and DoesEntityExist(closestVeh) then
+        processVehicleDV(closestVeh)
+    else
+        Haze.Client.Notify("Nenhum veículo próximo encontrado.", "error")
+    end
+end)
+
+exports("dvVehicle", processVehicleDV)
+exports("StoreVehicleNearestGarage", processVehicleDV)
+
