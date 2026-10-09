@@ -31,7 +31,9 @@ Config.NativeParkingMeterModels = {
     "prop_parkstat_01",
     "prop_parkstat_02",
     "prop_parkstat_03",
-    "prop_parkingpay_01"
+    "prop_parkingpay_01",
+    "prop_parknmeter_01",
+    "prop_parknmeter_02"
 }
 
 -- Parquímetros Customizados (Coordenadas extras onde props serão gerados automaticamente)
