@@ -18,16 +18,40 @@
                     <span class="brand-accent"></span>
                     <h1 id="garage-title">Haze Garages</h1>
                 </div>
-                <button id="close-btn" class="close-btn">&times;</button>
+                <div class="header-right">
+                    <div class="search-box">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="search-input" placeholder="Buscar modelo ou placa...">
+                    </div>
+                    <button id="close-btn" class="close-btn">&times;</button>
+                </div>
             </header>
             <div class="modal-body">
                 <div id="vehicle-list" class="vehicle-list">
-                    <!-- Dynamic Vehicle Items -->
+                    <!-- Dynamic Vehicle Cards -->
                 </div>
             </div>
             <footer class="modal-footer">
                 <span class="footer-info">Haze Studios &copy; 2026</span>
             </footer>
+        </div>
+
+        <!-- Nickname Edit Prompt Modal -->
+        <div id="nickname-modal" class="modal-overlay hidden">
+            <div class="prompt-box">
+                <div class="prompt-header">
+                    <i class="fas fa-tag"></i>
+                    <h3>Editar Apelido do Veículo</h3>
+                </div>
+                <div class="prompt-body">
+                    <p id="prompt-plate-info">PLACA: ABC1234</p>
+                    <input type="text" id="nickname-input" placeholder="Ex: Meu Adder de Corrida" maxlength="30" autocomplete="off">
+                </div>
+                <div class="prompt-footer">
+                    <button id="cancel-nickname-btn" class="btn-cancel">CANCELAR</button>
+                    <button id="save-nickname-btn" class="btn-save">SALVAR</button>
+                </div>
+            </div>
         </div>
     </div>
     <script src="app.js"></script>

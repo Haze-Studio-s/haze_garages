@@ -119,5 +119,21 @@ Este documento é o **guia oficial de testes passo a passo** para homologação 
 
 ---
 
+### 🔹 Teste 10: Apelidos de Veículos (Nicknames) & NUI `/listarveiculos` (Lation Emerald)
+1. Execute `/listarveiculos` no chat.
+2. **Resultado Esperado**:
+   - Abre a **NUI Lation Modern UI Modal** (Emerald Edition) com a barra de rolagem customizada escura (sem a barra nativa branca do navegador).
+   - Exibe a lista completa de veículos com barra de busca por texto em tempo real (filtrando por modelo, placa ou apelido).
+3. Clique no botão de editar apelido (`✏️`) ao lado de um veículo.
+4. Digite um apelido (ex: *"Meu Adder de Corrida"*) e clique em **"SALVAR"**.
+5. **Resultado Esperado**:
+   - Notificação de confirmação e tag visual verde exibidida ao lado do nome do veículo (`[tag: Meu Adder de Corrida]`).
+   - O apelido permanece salvo no banco de dados (`haze_vehicle_nicknames`) e persiste mesmo após fechar a NUI, relogar ou reiniciar o script.
+6. Em um veículo estacionado na rua, clique no botão de rastreamento (`📍`).
+   - **Resultado Esperado**: Marca o ponto exato no GPS do mapa.
+
+---
+
 *Haze Studios © 2026.*
+
 

@@ -34,15 +34,17 @@ lib.callback.register("haze_garages:server:getUserVehicles", function(source, ga
     end
 
     local rows = MySQL.query.await([[
-        SELECT pv.*, hsd.deformation, hsd.mechanical_damage
+        SELECT pv.*, hsd.deformation, hsd.mechanical_damage, hvn.nickname
         FROM player_vehicles pv
         LEFT JOIN haze_vehicle_deformations hsd ON hsd.plate COLLATE utf8mb4_unicode_ci = pv.plate COLLATE utf8mb4_unicode_ci
+        LEFT JOIN haze_vehicle_nicknames hvn ON hvn.plate COLLATE utf8mb4_unicode_ci = pv.plate COLLATE utf8mb4_unicode_ci
         WHERE (pv.citizenid IS NOT NULL AND pv.citizenid COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci)
            OR (pv.license IS NOT NULL AND pv.license COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci)
     ]], { citizenid or "NONE", citizenid or "NONE" })
 
     return rows or {}
 end)
+
 
 lib.callback.register("haze_garages:server:spawnVehicle", function(source, plate, garageId)
     local src = source
@@ -149,11 +151,13 @@ lib.callback.register("haze_garages:server:getDetailedPlayerVehicles", function(
                hsd.deformation, 
                hsd.mechanical_damage,
                gvw.wear_data,
-               gvw.mileage
+               gvw.mileage,
+               hvn.nickname
         FROM player_vehicles pv
         LEFT JOIN haze_street_parking hsp ON hsp.plate COLLATE utf8mb4_unicode_ci = pv.plate COLLATE utf8mb4_unicode_ci
         LEFT JOIN haze_vehicle_deformations hsd ON hsd.plate COLLATE utf8mb4_unicode_ci = pv.plate COLLATE utf8mb4_unicode_ci
         LEFT JOIN granolla_vehicle_wear gvw ON gvw.plate COLLATE utf8mb4_unicode_ci = pv.plate COLLATE utf8mb4_unicode_ci
+        LEFT JOIN haze_vehicle_nicknames hvn ON hvn.plate COLLATE utf8mb4_unicode_ci = pv.plate COLLATE utf8mb4_unicode_ci
         WHERE (pv.citizenid IS NOT NULL AND pv.citizenid COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci)
            OR (pv.license IS NOT NULL AND pv.license COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci)
     ]], { citizenid or "NONE", license or "NONE" })
@@ -198,6 +202,7 @@ lib.callback.register("haze_garages:server:getDetailedPlayerVehicles", function(
             plate = row.plate,
             model = row.street_model or row.vehicle or row.model,
             label = row.vehicle or row.model,
+            nickname = row.nickname,
             state = row.state,
             garage = row.garage,
             statusLabel = statusLabel,
@@ -215,6 +220,37 @@ lib.callback.register("haze_garages:server:getDetailedPlayerVehicles", function(
 
     return vehicles
 end)
+
+lib.callback.register("haze_garages:server:setNickname", function(source, plate, nickname)
+    local src = source
+    local citizenid = Haze.Server.GetPlayerIdentifier(src)
+    if not citizenid or not plate then return false, "Identificador ou placa inválida." end
+
+    local cleanPlate = Haze.Shared.CleanPlate(plate)
+    local isOwner = MySQL.scalar.await("SELECT 1 FROM player_vehicles WHERE plate = ? AND (citizenid = ? OR license = ?)", { cleanPlate, citizenid, citizenid })
+    if not isOwner then
+        return false, Locale.not_vehicle_owner or "Você não é o proprietário deste veículo."
+    end
+
+    local cleanNickname = nickname and string.gsub(tostring(nickname), "^%s*(.-)%s*$", "%1") or ""
+    if #cleanNickname > 30 then
+        cleanNickname = string.sub(cleanNickname, 1, 30)
+    end
+
+    if cleanNickname == "" then
+        MySQL.query.await("DELETE FROM haze_vehicle_nicknames WHERE plate = ?", { cleanPlate })
+    else
+        MySQL.query.await([[
+            REPLACE INTO haze_vehicle_nicknames (plate, nickname)
+            VALUES (?, ?)
+        ]], { cleanPlate, cleanNickname })
+    end
+
+    print(string.format("^3[Haze Garages]^7 Apelido do veículo %s atualizado para '%s' (src: %s)", cleanPlate, cleanNickname, src))
+
+    return true, { plate = cleanPlate, nickname = cleanNickname }
+end)
+
 
 lib.callback.register("haze_garages:server:unparkOrSpawnVehicle", function(source, plate)
     local src = source

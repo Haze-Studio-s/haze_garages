@@ -92,6 +92,7 @@ RegisterNetEvent("haze_garages:client:openGarageMenu", function(garageId)
         nuiVehicles[#nuiVehicles + 1] = {
             plate = plate,
             model = string.upper(model),
+            nickname = v.nickname or "",
             engine = v.engine or 1000,
             body = v.body or 1000,
             fuel = v.fuel or 100,
@@ -120,18 +121,52 @@ RegisterNUICallback("spawnVehicle", function(data, cb)
     cb("ok")
 end)
 
-RegisterNetEvent("haze_garages:client:spawnVehicle", function(plate, garageId)
-    local success, payload = lib.callback.await("haze_garages:server:spawnVehicle", false, plate, garageId)
+RegisterNUICallback("setNickname", function(data, cb)
+    if not data or not data.plate then cb({ ok = false }) return end
+    local success, res = lib.callback.await("haze_garages:server:setNickname", false, data.plate, data.nickname)
+    if success then
+        Haze.Client.Notify(res.nickname ~= "" and string.format("Apelido definido: '%s'", res.nickname) or "Apelido removido.", "success")
+        cb({ ok = true, plate = res.plate, nickname = res.nickname })
+    else
+        Haze.Client.Notify(res or "Erro ao definir apelido.", "error")
+        cb({ ok = false })
+    end
+end)
+
+RegisterNUICallback("trackVehicle", function(data, cb)
+    if data and data.x and data.y then
+        SetNewWaypoint(data.x + 0.0, data.y + 0.0)
+        Haze.Client.Notify("Localização do veículo marcada no GPS!", "info")
+        cb("ok")
+    else
+        cb("error")
+    end
+end)
+
+RegisterNUICallback("unparkVehicle", function(data, cb)
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = "closeGarage" })
+
+    local plate = data.plate
+    local success, payload = lib.callback.await("haze_garages:server:unparkOrSpawnVehicle", false, plate)
     if not success then
-        Haze.Client.Notify(payload or Locale.spawn_blocked, "error")
+        Haze.Client.Notify(payload or "Erro ao retirar veículo.", "error")
+        cb("error")
         return
     end
 
-    local coords = payload.spawnCoords
-    local modelHash = Haze.Shared.GetModelHash(payload.model)
-    Haze.Client.RequestModel(modelHash)
+    local currentPed = cache.ped or PlayerPedId()
+    local currentPedCoords = GetEntityCoords(currentPed)
+    local spawnCoords = payload.spawnCoords or vec4(currentPedCoords.x + 2.0, currentPedCoords.y + 2.0, currentPedCoords.z, GetEntityHeading(currentPed))
 
-    local veh = CreateVehicle(modelHash, coords.x, coords.y, coords.z, coords.w, true, false)
+    local modelHash = Haze.Shared.GetModelHash(payload.model)
+    if not modelHash or not Haze.Client.RequestModel(modelHash) then
+        Haze.Client.Notify("Erro ao carregar modelo do veículo.", "error")
+        cb("error")
+        return
+    end
+
+    local veh = CreateVehicle(modelHash, spawnCoords.x, spawnCoords.y, spawnCoords.z, spawnCoords.w or 0.0, true, false)
     SetVehicleNumberPlateText(veh, payload.plate)
 
     if payload.mods then
@@ -146,7 +181,8 @@ RegisterNetEvent("haze_garages:client:spawnVehicle", function(plate, garageId)
     TriggerServerEvent("haze_garages:server:giveVehicleKeys", netId, payload.plate)
     TriggerEvent("qb-vehiclekeys:client:AddKeys", payload.plate)
 
-    Haze.Client.Notify(Locale.vehicle_spawned, "success")
+    Haze.Client.Notify("Veículo retirado com sucesso!", "success")
+    cb("ok")
 end)
 
 RegisterCommand("listarveiculos", function()
@@ -156,114 +192,32 @@ RegisterCommand("listarveiculos", function()
         return
     end
 
-    local options = {}
-
-    local ped = cache.ped or PlayerPedId()
-    local pedCoords = GetEntityCoords(ped)
-
+    local nuiVehicles = {}
     for _, v in ipairs(vehicles) do
-        local isStreetVehicle = (v.spawnType == "street" and v.streetCoords)
-        local distToStreetSpot = isStreetVehicle and #(pedCoords - vec3(v.streetCoords.x, v.streetCoords.y, v.streetCoords.z)) or 999999.0
-        local isNearStreetSpot = (isStreetVehicle and distToStreetSpot <= 30.0)
-
-        local metadata = {
-            { label = "Placa", value = v.plate },
-            { label = "Status", value = v.statusLabel },
-            { label = "Motor", value = string.format("%.0f%%", (v.engineHealth / 10) or 100) },
-            { label = "Lataria", value = string.format("%.0f%%", (v.bodyHealth / 10) or 100) },
-            { label = "Combustível", value = string.format("%.0f%%", v.fuel or 100) },
-            { label = "Quilometragem", value = string.format("%.1f", v.mileage or 0) }
+        nuiVehicles[#nuiVehicles + 1] = {
+            plate = v.plate,
+            model = string.upper(v.model or "Desconhecido"),
+            label = v.label or v.model,
+            nickname = v.nickname or "",
+            statusLabel = v.statusLabel,
+            isSpawnable = v.isSpawnable,
+            spawnType = v.spawnType,
+            streetCoords = v.streetCoords,
+            engine = v.engineHealth or 1000,
+            body = v.bodyHealth or 1000,
+            fuel = v.fuel or 100,
+            mileage = v.mileage or 0
         }
-
-        if v.wearData and type(v.wearData) == "table" then
-            for part, val in pairs(v.wearData) do
-                table.insert(metadata, {
-                    label = "Peça " .. string.upper(part),
-                    value = string.format("%.0f%%", val)
-                })
-            end
-        end
-
-        local desc = string.format("📍 Status: **%s**\n🔧 Motor: %d%% | Lataria: %d%%", 
-            v.statusLabel, 
-            math.floor(v.engineHealth / 10), 
-            math.floor(v.bodyHealth / 10)
-        )
-
-        local icon = isStreetVehicle and "fas fa-road" or "fas fa-car"
-
-        table.insert(options, {
-            title = string.upper(v.model) .. " [" .. v.plate .. "]",
-            description = desc,
-            metadata = metadata,
-            icon = icon,
-            disabled = not v.isSpawnable,
-            onSelect = function()
-                if isStreetVehicle and not isNearStreetSpot then
-                    SetNewWaypoint(v.streetCoords.x, v.streetCoords.y)
-                    Haze.Client.Notify(string.format("Localização do veículo %s marcada no GPS! Vá até o local para retirá-lo.", string.upper(v.model)), "info")
-                    return
-                end
-
-                if not v.isSpawnable then
-                    Haze.Client.Notify("Este veículo não pode ser retirado agora (" .. v.statusLabel .. ").", "error")
-                    return
-                end
-
-                local confirm = lib.alertDialog({
-                    header = "Retirar Veículo",
-                    content = string.format("Deseja retirar o veículo **%s** [%s]?\n\nLocalização atual: **%s**", string.upper(v.model), v.plate, v.statusLabel),
-                    centered = true,
-                    cancel = true,
-                    labels = { confirm = "Retirar / Spawn", cancel = "Cancelar" }
-                })
-
-                if confirm == "confirm" then
-                    local success, payload = lib.callback.await("haze_garages:server:unparkOrSpawnVehicle", false, v.plate)
-                    if not success then
-                        Haze.Client.Notify(payload or "Erro ao retirar veículo.", "error")
-                        return
-                    end
-
-                    local currentPed = cache.ped or PlayerPedId()
-                    local currentPedCoords = GetEntityCoords(currentPed)
-
-                    local spawnCoords = payload.spawnCoords or vec4(currentPedCoords.x + 2.0, currentPedCoords.y + 2.0, currentPedCoords.z, GetEntityHeading(currentPed))
-                    local modelHash = Haze.Shared.GetModelHash(payload.model)
-                    if not modelHash or not Haze.Client.RequestModel(modelHash) then
-                        Haze.Client.Notify("Erro ao carregar modelo do veículo.", "error")
-                        return
-                    end
-
-                    local veh = CreateVehicle(modelHash, spawnCoords.x, spawnCoords.y, spawnCoords.z, spawnCoords.w or 0.0, true, false)
-                    SetVehicleNumberPlateText(veh, payload.plate)
-
-                    if payload.mods then
-                        Haze.Client.SetVehicleProperties(veh, payload.mods)
-                    end
-
-                    if payload.deformation or payload.mechanical then
-                        TriggerEvent("haze_garages:client:applyVehicleDeformation", veh, payload.deformation, payload.mechanical)
-                    end
-
-                    local netId = NetworkGetNetworkIdFromEntity(veh)
-                    TriggerServerEvent("haze_garages:server:giveVehicleKeys", netId, payload.plate)
-                    TriggerEvent("qb-vehiclekeys:client:AddKeys", payload.plate)
-
-                    Haze.Client.Notify("Veículo retirado com sucesso!", "success")
-                end
-            end
-        })
     end
 
-    lib.registerContext({
-        id = "haze_garages_list_vehicles",
+    SetNuiFocus(true, true)
+    SendNUIMessage({
+        action = "openVehicleList",
         title = "🚗 Meus Veículos",
-        options = options
+        vehicles = nuiVehicles
     })
-
-    lib.showContext("haze_garages_list_vehicles")
 end, false)
+
 
 local function processVehicleDV(veh)
     if not veh or not DoesEntityExist(veh) then return false end
