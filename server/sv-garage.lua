@@ -254,3 +254,8 @@ lib.callback.register("haze_garages:server:unparkOrSpawnVehicle", function(sourc
         spawnCoords = spawnCoords
     }
 end)
+
+RegisterNetEvent("haze_garages:server:giveVehicleKeys", function(netId, plate)
+    local src = source
+    Haze.Server.GiveKey(src, plate, netId)
+end)

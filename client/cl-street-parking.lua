@@ -144,6 +144,9 @@ RegisterNetEvent("haze_garages:client:refreshStreetVehicles", function(existingV
                     if success and self.entity and DoesEntityExist(self.entity) then
                         FreezeEntityPosition(self.entity, false)
                         SetVehicleDoorsLocked(self.entity, 1)
+                        local netId = NetworkGetNetworkIdFromEntity(self.entity)
+                        TriggerServerEvent("haze_garages:server:giveVehicleKeys", netId, item.plate)
+                        TriggerEvent("qb-vehiclekeys:client:AddKeys", item.plate)
                         self.entity = nil
                         self:remove()
                     end

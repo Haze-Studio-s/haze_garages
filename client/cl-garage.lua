@@ -124,6 +124,10 @@ RegisterNetEvent("haze_garages:client:spawnVehicle", function(plate, garageId)
         TriggerEvent("haze_garages:client:applyVehicleDeformation", veh, payload.deformation, payload.mechanical)
     end
 
+    local netId = NetworkGetNetworkIdFromEntity(veh)
+    TriggerServerEvent("haze_garages:server:giveVehicleKeys", netId, payload.plate)
+    TriggerEvent("qb-vehiclekeys:client:AddKeys", payload.plate)
+
     Haze.Client.Notify(Locale.vehicle_spawned, "success")
 end)
 
@@ -223,6 +227,10 @@ RegisterCommand("listarveiculos", function()
                     if payload.deformation or payload.mechanical then
                         TriggerEvent("haze_garages:client:applyVehicleDeformation", veh, payload.deformation, payload.mechanical)
                     end
+
+                    local netId = NetworkGetNetworkIdFromEntity(veh)
+                    TriggerServerEvent("haze_garages:server:giveVehicleKeys", netId, payload.plate)
+                    TriggerEvent("qb-vehiclekeys:client:AddKeys", payload.plate)
 
                     Haze.Client.Notify("Veículo retirado com sucesso!", "success")
                 end

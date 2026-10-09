@@ -140,12 +140,25 @@ function Haze.Server.RemoveMoney(src, amount)
     return true
 end
 
-function Haze.Server.GiveKey(src, plate)
+function Haze.Server.GiveKey(src, plate, netId)
     src = tonumber(src)
+    if not src then return end
     local cleanPlate = Haze.Shared.CleanPlate(plate)
+
+    if netId then
+        local veh = NetworkGetEntityFromNetworkId(netId)
+        if DoesEntityExist(veh) then
+            if GetResourceState('qbx_vehiclekeys') == 'started' then
+                pcall(function()
+                    exports.qbx_vehiclekeys:GiveKeys(src, veh)
+                end)
+            end
+        end
+    end
+
     if GetResourceState('qbx_vehiclekeys') == 'started' then
         pcall(function()
-            exports.qbx_vehiclekeys:GiveKeys(src, cleanPlate)
+            TriggerClientEvent('qb-vehiclekeys:client:AddKeys', src, cleanPlate)
         end)
     elseif GetResourceState('qb-vehiclekeys') == 'started' then
         TriggerClientEvent('qb-vehiclekeys:client:AddKeys', src, cleanPlate)
