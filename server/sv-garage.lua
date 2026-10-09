@@ -127,12 +127,19 @@ end)
 lib.callback.register("haze_garages:server:getDetailedPlayerVehicles", function(source)
     local src = source
     local citizenid = Haze.Server.GetPlayerIdentifier(src)
-    if not citizenid then
-        print(string.format("^1[Haze Garages]^7 Falha ao obter citizenid do player %s", tostring(src)))
-        return {}
+    local license = nil
+
+    local identifiers = GetPlayerIdentifiers(src)
+    if identifiers then
+        for _, id in ipairs(identifiers) do
+            if string.find(id, "license:") then
+                license = id
+                break
+            end
+        end
     end
 
-    print(string.format("^2[Haze Garages]^7 Buscando veículos para o citizenid '%s' (src: %s)", citizenid, tostring(src)))
+    print(string.format("^3[Haze Garages]^7 Buscando veículos para citizenid: '%s' | license: '%s' (src: %s)", tostring(citizenid), tostring(license), tostring(src)))
 
     local pvRows = MySQL.query.await([[
         SELECT pv.*, 
@@ -146,10 +153,11 @@ lib.callback.register("haze_garages:server:getDetailedPlayerVehicles", function(
         LEFT JOIN haze_street_parking hsp ON hsp.plate = pv.plate
         LEFT JOIN haze_vehicle_deformations hsd ON hsd.plate = pv.plate
         LEFT JOIN granolla_vehicle_wear gvw ON gvw.plate = pv.plate
-        WHERE pv.citizenid = ?
-    ]], { citizenid })
+        WHERE (pv.citizenid IS NOT NULL AND pv.citizenid = ?)
+           OR (pv.license IS NOT NULL AND pv.license = ?)
+    ]], { citizenid or "NONE", license or "NONE" })
 
-    print(string.format("^2[Haze Garages]^7 Veículos encontrados no DB: %d", #(pvRows or {})))
+    print(string.format("^2[Haze Garages]^7 Total de veículos encontrados no DB: %d", #(pvRows or {})))
 
     local vehicles = {}
     for _, row in ipairs(pvRows or {}) do
