@@ -31,15 +31,34 @@ MySQL.ready(function()
             id INT AUTO_INCREMENT PRIMARY KEY,
             meter_key VARCHAR(128) NOT NULL UNIQUE,
             hours_left INT DEFAULT 0,
-            expires_at TIMESTAMP NULL DEFAULT NULL
+            expires_at TIMESTAMP NULL DEFAULT NULL,
+            payer_name VARCHAR(100) DEFAULT NULL,
+            payer_phone VARCHAR(50) DEFAULT NULL,
+            citizenid VARCHAR(100) DEFAULT NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ]])
+
+    pcall(function()
+        MySQL.query.await("ALTER TABLE haze_parking_meters ADD COLUMN IF NOT EXISTS payer_name VARCHAR(100) DEFAULT NULL;")
+        MySQL.query.await("ALTER TABLE haze_parking_meters ADD COLUMN IF NOT EXISTS payer_phone VARCHAR(50) DEFAULT NULL;")
+        MySQL.query.await("ALTER TABLE haze_parking_meters ADD COLUMN IF NOT EXISTS citizenid VARCHAR(100) DEFAULT NULL;")
+    end)
 
     MySQL.query([[
         CREATE TABLE IF NOT EXISTS haze_vehicle_deformations (
             plate VARCHAR(32) NOT NULL,
             deformation LONGTEXT NULL,
             mechanical_damage LONGTEXT NULL,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (plate)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ]])
+
+    MySQL.query([[
+        CREATE TABLE IF NOT EXISTS granolla_vehicle_wear (
+            plate VARCHAR(32) NOT NULL,
+            wear_data LONGTEXT NULL,
+            mileage FLOAT DEFAULT 0.0,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (plate)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

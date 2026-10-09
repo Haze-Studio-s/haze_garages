@@ -240,3 +240,12 @@ lib.callback.register("haze_garages:server:unparkStreetVehicle", function(source
     Haze.Server.Notify(src, Locale.street_park_removed, "info")
     return true
 end)
+
+RegisterNetEvent("haze_garages:server:reportLockpickAttempt", function(plate, coords)
+    local src = source
+    local cleanPlate = Haze.Shared.CleanPlate(plate)
+    local msg = string.format("Tentativa de arrombamento em veículo protegido [Placa: %s]", cleanPlate)
+    local alertCoords = coords or vec3(0.0, 0.0, 0.0)
+    Haze.Server.NotifyPoliceAlert(alertCoords, cleanPlate, "🚨 Alarme - Veículo Protegido", msg)
+end)
+

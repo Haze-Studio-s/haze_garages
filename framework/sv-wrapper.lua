@@ -140,3 +140,85 @@ function Haze.Server.Notify(src, msg, type)
         type = type or 'info'
     })
 end
+
+function Haze.Server.GetPlayerFullName(src)
+    if not src then return "Desconhecido" end
+    if GetResourceState('qbx_core') == 'started' and QBX then
+        local player = QBX:GetPlayer(src)
+        if player and player.PlayerData and player.PlayerData.charinfo then
+            local fname = player.PlayerData.charinfo.firstname or ""
+            local lname = player.PlayerData.charinfo.lastname or ""
+            return (fname .. " " .. lname):gsub("^%s*(.-)%s*$", "%1")
+        end
+    elseif GetResourceState('qb-core') == 'started' then
+        local QBCore = exports['qb-core']:GetCoreObject()
+        local player = QBCore.Functions.GetPlayer(src)
+        if player and player.PlayerData and player.PlayerData.charinfo then
+            local fname = player.PlayerData.charinfo.firstname or ""
+            local lname = player.PlayerData.charinfo.lastname or ""
+            return (fname .. " " .. lname):gsub("^%s*(.-)%s*$", "%1")
+        end
+    elseif GetResourceState('es_extended') == 'started' then
+        local ESX = exports['es_extended']:getSharedObject()
+        local xPlayer = ESX.GetPlayerFromId(src)
+        if xPlayer then
+            return xPlayer.getName()
+        end
+    end
+    return GetPlayerName(src) or "Desconhecido"
+end
+
+function Haze.Server.GetPlayerPhone(src)
+    if not src then return "N/A" end
+    if GetResourceState('qbx_core') == 'started' and QBX then
+        local player = QBX:GetPlayer(src)
+        if player and player.PlayerData and player.PlayerData.charinfo then
+            return player.PlayerData.charinfo.phone or "N/A"
+        end
+    elseif GetResourceState('qb-core') == 'started' then
+        local QBCore = exports['qb-core']:GetCoreObject()
+        local player = QBCore.Functions.GetPlayer(src)
+        if player and player.PlayerData and player.PlayerData.charinfo then
+            return player.PlayerData.charinfo.phone or "N/A"
+        end
+    end
+    return "N/A"
+end
+
+function Haze.Server.NotifyPoliceAlert(coords, plate, title, message)
+    if GetResourceState('ps-dispatch') == 'started' then
+        pcall(function()
+            exports['ps-dispatch']:CustomAlert({
+                coords = coords,
+                message = message or "Tentativa de arrombamento de veículo",
+                dispatchCode = "10-90",
+                description = string.format("%s | Placa: %s", message, plate),
+                radius = 0,
+                sprite = 161,
+                color = 1,
+                scale = 0.8,
+                length = 3
+            })
+        end)
+    end
+
+    local policeJobs = Config.PoliceJobs or { "police", "sheriff" }
+    local players = GetPlayers()
+    for _, pId in ipairs(players) do
+        local targetSrc = tonumber(pId)
+        local job = Haze.Server.GetPlayerJob(targetSrc)
+        for _, pJob in ipairs(policeJobs) do
+            if job == pJob then
+                TriggerClientEvent('ox_lib:notify', targetSrc, {
+                    title = title or "🚨 Chamado Policial - Arrombamento",
+                    description = string.format("%s [Placa: %s]", message, plate),
+                    type = "error",
+                    duration = 10000
+                })
+                TriggerClientEvent('haze_garages:client:addPoliceBlip', targetSrc, coords, plate)
+                break
+            end
+        end
+    end
+end
+

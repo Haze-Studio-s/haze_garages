@@ -13,6 +13,8 @@
 - **Mecânica Integrada:** `granolla_mechanic` (leitura de desgaste de peças)
 - **Interface NUI:** Lation Modern UI — Emerald Edition (`#10b981` / `#6afe87` / `#1e1f24`, fontes Inter e JetBrains Mono)
 
+> 📖 **Guia Passo a Passo de Instalação:** Veja o arquivo [`instalacao/README.md`](file:///c:/Server%20Fivem%20Teste/resources/%5Bai_create%5D/haze_garages/instalacao/README.md) para registrar os itens do `ox_inventory`, ordem do `server.cfg` e comandos.
+
 ---
 
 ## ✨ Funcionalidades Principais

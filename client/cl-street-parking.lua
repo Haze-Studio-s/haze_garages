@@ -10,9 +10,13 @@ end
 local function safeDeleteVehicle(veh)
     if not veh or not DoesEntityExist(veh) then return end
     SetEntityAsMissionEntity(veh, true, true)
-    DeleteVehicle(veh)
-    if DoesEntityExist(veh) then
+    local tries = 0
+    while DoesEntityExist(veh) and tries < 20 do
+        NetworkRequestControlOfEntity(veh)
+        DeleteVehicle(veh)
         DeleteEntity(veh)
+        Wait(50)
+        tries = tries + 1
     end
 end
 
@@ -86,9 +90,9 @@ RegisterNetEvent("haze_garages:client:requestStreetPark", function()
         end
         TriggerEvent("haze_garages:client:refreshStreetVehicles", veh)
 
-        -- Despawn automático do veículo físico 90 segundos após estacionar
+        -- Despawn automático do veículo físico 60 segundos após estacionar
         CreateThread(function()
-            Wait(90000)
+            Wait(60000)
             if DoesEntityExist(veh) then
                 safeDeleteVehicle(veh)
             end
@@ -131,6 +135,8 @@ RegisterNetEvent("haze_garages:client:refreshStreetVehicles", function(existingV
                     local isOfflineLocked = lib.callback.await("haze_garages:server:checkVehicleOfflineLock", false, item.plate)
                     if isOfflineLocked then
                         Haze.Client.Notify(Locale.vehicle_offline_locked, "error")
+                        local pedCoords = GetEntityCoords(cache.ped or PlayerPedId())
+                        TriggerServerEvent("haze_garages:server:reportLockpickAttempt", item.plate, pedCoords)
                         return
                     end
 

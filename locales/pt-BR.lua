@@ -15,7 +15,7 @@ Locales['pt-BR'] = {
     street_park_removed = "Veículo retirado da vaga de rua.",
     street_park_limit_reached = "Você atingiu o limite de vagas de rua para o seu plano (%d/%d).",
     street_park_expired_transferred = "Sua vaga de rua expirou por inatividade. O veículo foi transferido para a garagem %s.",
-    vehicle_offline_locked = "O proprietário do veículo está offline! O veículo não pode ser arrombado por lockpick.",
+    vehicle_offline_locked = "Veículo protegido contra arrombamentos",
 
     -- Garagens Fixas
     garage_open_prompt = "Pressione ~g~[E]~s~ para acessar a garagem",

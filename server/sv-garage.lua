@@ -37,8 +37,8 @@ lib.callback.register("haze_garages:server:getUserVehicles", function(source, ga
         SELECT pv.*, hsd.deformation, hsd.mechanical_damage
         FROM player_vehicles pv
         LEFT JOIN haze_vehicle_deformations hsd ON hsd.plate = pv.plate
-        WHERE pv.citizenid = ? AND pv.state = 1
-    ]], { citizenid })
+        WHERE pv.citizenid = ? AND (pv.state = 1 OR pv.garage = ?)
+    ]], { citizenid, garageId })
 
     return rows or {}
 end)

@@ -11,8 +11,9 @@ AddEventHandler("haze_garages:client:init", function()
         local propHash = Haze.Shared.GetModelHash(propModel)
         Haze.Client.RequestModel(propHash)
 
-        local prop = CreateObject(propHash, garageData.coords.x, garageData.coords.y, garageData.coords.z - 1.0, false, false, false)
+        local prop = CreateObject(propHash, garageData.coords.x, garageData.coords.y, garageData.coords.z, false, false, false)
         SetEntityHeading(prop, garageData.coords.w or 0.0)
+        PlaceObjectOnGroundProperly(prop)
         FreezeEntityPosition(prop, true)
         SetEntityInvincible(prop, true)
         spawnedGarageProps[#spawnedGarageProps + 1] = prop
