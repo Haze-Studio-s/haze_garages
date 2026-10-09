@@ -1,112 +1,139 @@
 Haze = Haze or {}
 Haze.Server = Haze.Server or {}
 
-local QBX = exports['qbx_core']
+function Haze.Server.GetPlayer(src)
+    src = tonumber(src)
+    if not src or src <= 0 then return nil end
+
+    if GetResourceState('qbx_core') == 'started' then
+        local ok, player = pcall(function() return exports.qbx_core:GetPlayer(src) end)
+        if ok and player then return player end
+    end
+
+    if GetResourceState('qb-core') == 'started' then
+        local ok, QBCore = pcall(function() return exports['qb-core']:GetCoreObject() end)
+        if ok and QBCore and QBCore.Functions then
+            local player = QBCore.Functions.GetPlayer(src)
+            if player then return player end
+        end
+    end
+
+    return nil
+end
 
 function Haze.Server.GetPlayerIdentifier(src)
-    if GetResourceState('qbx_core') == 'started' and QBX then
-        local player = QBX:GetPlayer(src)
-        return player and player.PlayerData.citizenid or nil
-    elseif GetResourceState('qb-core') == 'started' then
-        local QBCore = exports['qb-core']:GetCoreObject()
-        local player = QBCore.Functions.GetPlayer(src)
-        return player and player.PlayerData.citizenid or nil
-    elseif GetResourceState('es_extended') == 'started' then
-        local ESX = exports['es_extended']:getSharedObject()
-        local xPlayer = ESX.GetPlayerFromId(src)
-        return xPlayer and xPlayer.identifier or nil
+    src = tonumber(src)
+    if not src then return nil end
+
+    local player = Haze.Server.GetPlayer(src)
+    if player and player.PlayerData and player.PlayerData.citizenid then
+        return player.PlayerData.citizenid
+    end
+
+    if GetResourceState('es_extended') == 'started' then
+        local ok, ESX = pcall(function() return exports['es_extended']:getSharedObject() end)
+        if ok and ESX then
+            local xPlayer = ESX.GetPlayerFromId(src)
+            if xPlayer and xPlayer.identifier then
+                return xPlayer.identifier
+            end
+        end
     end
 
     local identifiers = GetPlayerIdentifiers(src)
-    for _, id in ipairs(identifiers) do
-        if string.find(id, "license:") then
-            return id
+    if identifiers then
+        for _, id in ipairs(identifiers) do
+            if string.find(id, "license:") then
+                return id
+            end
         end
     end
     return nil
 end
 
 function Haze.Server.GetPlayerJob(src)
-    if GetResourceState('qbx_core') == 'started' and QBX then
-        local player = QBX:GetPlayer(src)
-        return player and player.PlayerData.job and player.PlayerData.job.name or "unemployed"
-    elseif GetResourceState('qb-core') == 'started' then
-        local QBCore = exports['qb-core']:GetCoreObject()
-        local player = QBCore.Functions.GetPlayer(src)
-        return player and player.PlayerData.job and player.PlayerData.job.name or "unemployed"
-    elseif GetResourceState('es_extended') == 'started' then
-        local ESX = exports['es_extended']:getSharedObject()
-        local xPlayer = ESX.GetPlayerFromId(src)
-        return xPlayer and xPlayer.job and xPlayer.job.name or "unemployed"
+    src = tonumber(src)
+    local player = Haze.Server.GetPlayer(src)
+    if player and player.PlayerData and player.PlayerData.job then
+        return player.PlayerData.job.name or "unemployed"
+    end
+
+    if GetResourceState('es_extended') == 'started' then
+        local ok, ESX = pcall(function() return exports['es_extended']:getSharedObject() end)
+        if ok and ESX then
+            local xPlayer = ESX.GetPlayerFromId(src)
+            return xPlayer and xPlayer.job and xPlayer.job.name or "unemployed"
+        end
     end
     return "unemployed"
 end
 
 function Haze.Server.GetPlayerGang(src)
-    if GetResourceState('qbx_core') == 'started' and QBX then
-        local player = QBX:GetPlayer(src)
-        return player and player.PlayerData.gang and player.PlayerData.gang.name or "none"
-    elseif GetResourceState('qb-core') == 'started' then
-        local QBCore = exports['qb-core']:GetCoreObject()
-        local player = QBCore.Functions.GetPlayer(src)
-        return player and player.PlayerData.gang and player.PlayerData.gang.name or "none"
+    src = tonumber(src)
+    local player = Haze.Server.GetPlayer(src)
+    if player and player.PlayerData and player.PlayerData.gang then
+        return player.PlayerData.gang.name or "none"
     end
     return "none"
 end
 
 function Haze.Server.IsPlayerOnlineByIdentifier(citizenid)
     if not citizenid then return false end
-    if GetResourceState('qbx_core') == 'started' and QBX then
-        local player = QBX:GetPlayerByCitizenId(citizenid)
-        return player ~= nil
-    elseif GetResourceState('qb-core') == 'started' then
-        local QBCore = exports['qb-core']:GetCoreObject()
-        local player = QBCore.Functions.GetPlayerByCitizenId(citizenid)
-        return player ~= nil
+
+    if GetResourceState('qbx_core') == 'started' then
+        local ok, player = pcall(function() return exports.qbx_core:GetPlayerByCitizenId(citizenid) end)
+        if ok and player then return true end
     end
+
+    if GetResourceState('qb-core') == 'started' then
+        local ok, QBCore = pcall(function() return exports['qb-core']:GetCoreObject() end)
+        if ok and QBCore and QBCore.Functions then
+            local player = QBCore.Functions.GetPlayerByCitizenId(citizenid)
+            if player then return true end
+        end
+    end
+
     return false
 end
 
 function Haze.Server.GetMoney(src)
-    if GetResourceState('qbx_core') == 'started' and QBX then
-        local player = QBX:GetPlayer(src)
-        return player and player.PlayerData.money.cash or 0
-    elseif GetResourceState('qb-core') == 'started' then
-        local QBCore = exports['qb-core']:GetCoreObject()
-        local player = QBCore.Functions.GetPlayer(src)
-        return player and player.PlayerData.money.cash or 0
-    elseif GetResourceState('es_extended') == 'started' then
-        local ESX = exports['es_extended']:getSharedObject()
-        local xPlayer = ESX.GetPlayerFromId(src)
-        return xPlayer and xPlayer.getMoney() or 0
+    src = tonumber(src)
+    local player = Haze.Server.GetPlayer(src)
+    if player and player.PlayerData and player.PlayerData.money then
+        return player.PlayerData.money.cash or 0
     end
-    return 999999
+
+    if GetResourceState('es_extended') == 'started' then
+        local ok, ESX = pcall(function() return exports['es_extended']:getSharedObject() end)
+        if ok and ESX then
+            local xPlayer = ESX.GetPlayerFromId(src)
+            return xPlayer and xPlayer.getMoney() or 0
+        end
+    end
+    return 0
 end
 
 function Haze.Server.RemoveMoney(src, amount)
+    src = tonumber(src)
     if amount <= 0 then return true end
-    
-    if GetResourceState('qbx_core') == 'started' and QBX then
-        local player = QBX:GetPlayer(src)
-        if player and player.PlayerData.money.cash >= amount then
+
+    local player = Haze.Server.GetPlayer(src)
+    if player and player.Functions and player.PlayerData and player.PlayerData.money then
+        if (player.PlayerData.money.cash or 0) >= amount then
             player.Functions.RemoveMoney('cash', amount, "haze-garages-payment")
             return true
         end
         return false
-    elseif GetResourceState('qb-core') == 'started' then
-        local QBCore = exports['qb-core']:GetCoreObject()
-        local player = QBCore.Functions.GetPlayer(src)
-        if player and player.PlayerData.money.cash >= amount then
-            player.Functions.RemoveMoney('cash', amount, "haze-garages-payment")
-            return true
-        end
-        return false
-    elseif GetResourceState('es_extended') == 'started' then
-        local ESX = exports['es_extended']:getSharedObject()
-        local xPlayer = ESX.GetPlayerFromId(src)
-        if xPlayer and xPlayer.getMoney() >= amount then
-            xPlayer.removeMoney(amount)
-            return true
+    end
+
+    if GetResourceState('es_extended') == 'started' then
+        local ok, ESX = pcall(function() return exports['es_extended']:getSharedObject() end)
+        if ok and ESX then
+            local xPlayer = ESX.GetPlayerFromId(src)
+            if xPlayer and xPlayer.getMoney() >= amount then
+                xPlayer.removeMoney(amount)
+                return true
+            end
         end
         return false
     end
@@ -114,6 +141,7 @@ function Haze.Server.RemoveMoney(src, amount)
 end
 
 function Haze.Server.GiveKey(src, plate)
+    src = tonumber(src)
     local cleanPlate = Haze.Shared.CleanPlate(plate)
     if GetResourceState('qbx_vehiclekeys') == 'started' then
         pcall(function()
@@ -125,6 +153,7 @@ function Haze.Server.GiveKey(src, plate)
 end
 
 function Haze.Server.RemoveKey(src, plate)
+    src = tonumber(src)
     local cleanPlate = Haze.Shared.CleanPlate(plate)
     if GetResourceState('qbx_vehiclekeys') == 'started' then
         pcall(function()
@@ -134,6 +163,7 @@ function Haze.Server.RemoveKey(src, plate)
 end
 
 function Haze.Server.Notify(src, msg, type)
+    src = tonumber(src)
     TriggerClientEvent('ox_lib:notify', src, {
         title = Locale.system_name,
         description = msg,
@@ -142,45 +172,31 @@ function Haze.Server.Notify(src, msg, type)
 end
 
 function Haze.Server.GetPlayerFullName(src)
-    if not src then return "Desconhecido" end
-    if GetResourceState('qbx_core') == 'started' and QBX then
-        local player = QBX:GetPlayer(src)
-        if player and player.PlayerData and player.PlayerData.charinfo then
-            local fname = player.PlayerData.charinfo.firstname or ""
-            local lname = player.PlayerData.charinfo.lastname or ""
-            return (fname .. " " .. lname):gsub("^%s*(.-)%s*$", "%1")
-        end
-    elseif GetResourceState('qb-core') == 'started' then
-        local QBCore = exports['qb-core']:GetCoreObject()
-        local player = QBCore.Functions.GetPlayer(src)
-        if player and player.PlayerData and player.PlayerData.charinfo then
-            local fname = player.PlayerData.charinfo.firstname or ""
-            local lname = player.PlayerData.charinfo.lastname or ""
-            return (fname .. " " .. lname):gsub("^%s*(.-)%s*$", "%1")
-        end
-    elseif GetResourceState('es_extended') == 'started' then
-        local ESX = exports['es_extended']:getSharedObject()
-        local xPlayer = ESX.GetPlayerFromId(src)
-        if xPlayer then
-            return xPlayer.getName()
+    src = tonumber(src)
+    local player = Haze.Server.GetPlayer(src)
+    if player and player.PlayerData and player.PlayerData.charinfo then
+        local fname = player.PlayerData.charinfo.firstname or ""
+        local lname = player.PlayerData.charinfo.lastname or ""
+        local full = (fname .. " " .. lname):gsub("^%s*(.-)%s*$", "%1")
+        if full and full ~= "" then return full end
+    end
+
+    if GetResourceState('es_extended') == 'started' then
+        local ok, ESX = pcall(function() return exports['es_extended']:getSharedObject() end)
+        if ok and ESX then
+            local xPlayer = ESX.GetPlayerFromId(src)
+            if xPlayer then return xPlayer.getName() end
         end
     end
+
     return GetPlayerName(src) or "Desconhecido"
 end
 
 function Haze.Server.GetPlayerPhone(src)
-    if not src then return "N/A" end
-    if GetResourceState('qbx_core') == 'started' and QBX then
-        local player = QBX:GetPlayer(src)
-        if player and player.PlayerData and player.PlayerData.charinfo then
-            return player.PlayerData.charinfo.phone or "N/A"
-        end
-    elseif GetResourceState('qb-core') == 'started' then
-        local QBCore = exports['qb-core']:GetCoreObject()
-        local player = QBCore.Functions.GetPlayer(src)
-        if player and player.PlayerData and player.PlayerData.charinfo then
-            return player.PlayerData.charinfo.phone or "N/A"
-        end
+    src = tonumber(src)
+    local player = Haze.Server.GetPlayer(src)
+    if player and player.PlayerData and player.PlayerData.charinfo then
+        return player.PlayerData.charinfo.phone or "N/A"
     end
     return "N/A"
 end
@@ -221,4 +237,3 @@ function Haze.Server.NotifyPoliceAlert(coords, plate, title, message)
         end
     end
 end
-

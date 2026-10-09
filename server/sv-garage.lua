@@ -127,7 +127,12 @@ end)
 lib.callback.register("haze_garages:server:getDetailedPlayerVehicles", function(source)
     local src = source
     local citizenid = Haze.Server.GetPlayerIdentifier(src)
-    if not citizenid then return {} end
+    if not citizenid then
+        print(string.format("^1[Haze Garages]^7 Falha ao obter citizenid do player %s", tostring(src)))
+        return {}
+    end
+
+    print(string.format("^2[Haze Garages]^7 Buscando veículos para o citizenid '%s' (src: %s)", citizenid, tostring(src)))
 
     local pvRows = MySQL.query.await([[
         SELECT pv.*, 
@@ -143,6 +148,8 @@ lib.callback.register("haze_garages:server:getDetailedPlayerVehicles", function(
         LEFT JOIN granolla_vehicle_wear gvw ON gvw.plate = pv.plate
         WHERE pv.citizenid = ?
     ]], { citizenid })
+
+    print(string.format("^2[Haze Garages]^7 Veículos encontrados no DB: %d", #(pvRows or {})))
 
     local vehicles = {}
     for _, row in ipairs(pvRows or {}) do
