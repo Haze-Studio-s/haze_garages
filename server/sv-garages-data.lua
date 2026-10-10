@@ -121,13 +121,153 @@ function LoadGaragesData()
         end
     end
 
-    -- Se o arquivo não existir ou estiver vazio, faz fallback e cria o arquivo inicial
+    -- Se o arquivo não existir ou estiver vazio, restaura as garagens padrão no disco
     if not parsed then
-        print("^3[Haze Garages]^7 Arquivo data/garages.json não encontrado ou vazio. Migrando garagens padrão...")
-        parsed = {}
-        for gId, gData in pairs(Config.FixedGarages or {}) do
-            parsed[gId] = serializeGarage(gData)
-        end
+        print("^3[Haze Garages]^7 Arquivo data/garages.json não encontrado. Criando arquivo com garagens padrão...")
+        local defaultGarages = {
+            ["legion_square"] = {
+                label = "Garagem Central - Praça Legion",
+                type = "public",
+                category = "car",
+                coords = { x = 215.12, y = -810.55, z = 30.7, w = 320.0 },
+                dropZone = {
+                    points = {
+                        { x = 210.5, y = -792.0, z = 30.6 },
+                        { x = 220.5, y = -792.0, z = 30.6 },
+                        { x = 220.5, y = -805.0, z = 30.6 },
+                        { x = 210.5, y = -805.0, z = 30.6 }
+                    },
+                    thickness = 6.0
+                },
+                spawnCoords = {
+                    { x = 222.1, y = -805.2, z = 30.6, w = 140.0 },
+                    { x = 225.8, y = -803.5, z = 30.6, w = 140.0 },
+                    { x = 229.5, y = -801.8, z = 30.6, w = 140.0 },
+                    { x = 233.2, y = -800.1, z = 30.6, w = 140.0 }
+                },
+                pedModel = "a_m_y_business_01",
+                blip = { sprite = 357, color = 3, scale = 0.75 },
+                price = 0
+            },
+            ["pillbox_roof"] = {
+                label = "Heliponto Hospital Pillbox",
+                type = "public",
+                category = "plane",
+                coords = { x = 352.1, y = -588.2, z = 74.16, w = 250.0 },
+                dropZone = {
+                    points = {
+                        { x = 343.0, y = -580.0, z = 74.16 },
+                        { x = 358.0, y = -580.0, z = 74.16 },
+                        { x = 358.0, y = -596.0, z = 74.16 },
+                        { x = 343.0, y = -596.0, z = 74.16 }
+                    },
+                    thickness = 8.0
+                },
+                spawnCoords = {
+                    { x = 348.5, y = -587.1, z = 74.16, w = 70.0 },
+                    { x = 354.2, y = -594.3, z = 74.16, w = 70.0 }
+                },
+                pedModel = "s_m_m_doctor_01",
+                blip = { sprite = 423, color = 3, scale = 0.75 },
+                price = 0
+            },
+            ["marina_boat"] = {
+                label = "Marina de Los Santos",
+                type = "public",
+                category = "boat",
+                coords = { x = -735.4, y = -1320.1, z = 1.6, w = 0.0 },
+                dropZone = {
+                    points = {
+                        { x = -716.0, y = -1320.0, z = 0.5 },
+                        { x = -734.0, y = -1320.0, z = 0.5 },
+                        { x = -734.0, y = -1340.0, z = 0.5 },
+                        { x = -716.0, y = -1340.0, z = 0.5 }
+                    },
+                    thickness = 10.0
+                },
+                spawnCoords = {
+                    { x = -730.1, y = -1330.5, z = 0.5, w = 180.0 },
+                    { x = -723.4, y = -1335.2, z = 0.5, w = 180.0 },
+                    { x = -716.8, y = -1339.8, z = 0.5, w = 180.0 }
+                },
+                pedModel = "s_m_m_dockwork_01",
+                blip = { sprite = 410, color = 3, scale = 0.75 },
+                price = 0
+            },
+            ["police_main"] = {
+                label = "Garagem Departamento de Polícia (LSPD)",
+                type = "job",
+                job = "police",
+                category = "car",
+                coords = { x = 441.1, y = -981.2, z = 30.6, w = 270.0 },
+                dropZone = {
+                    points = {
+                        { x = 435.0, y = -988.0, z = 30.6 },
+                        { x = 447.0, y = -988.0, z = 30.6 },
+                        { x = 447.0, y = -1002.0, z = 30.6 },
+                        { x = 435.0, y = -1002.0, z = 30.6 }
+                    },
+                    thickness = 6.0
+                },
+                spawnCoords = {
+                    { x = 447.2, y = -981.2, z = 30.6, w = 90.0 },
+                    { x = 447.2, y = -985.4, z = 30.6, w = 90.0 },
+                    { x = 447.2, y = -989.6, z = 30.6, w = 90.0 },
+                    { x = 447.2, y = -993.8, z = 30.6, w = 90.0 }
+                },
+                pedModel = "s_m_y_cop_01",
+                blip = { sprite = 60, color = 38, scale = 0.8 },
+                price = 0
+            },
+            ["vagos_base"] = {
+                label = "Garagem Facção Vagos",
+                type = "gang",
+                gang = "vagos",
+                category = "car",
+                coords = { x = 335.5, y = -2012.3, z = 20.8, w = 225.0 },
+                dropZone = {
+                    points = {
+                        { x = 332.0, y = -2004.0, z = 20.8 },
+                        { x = 345.0, y = -2004.0, z = 20.8 },
+                        { x = 345.0, y = -2017.0, z = 20.8 },
+                        { x = 332.0, y = -2017.0, z = 20.8 }
+                    },
+                    thickness = 6.0
+                },
+                spawnCoords = {
+                    { x = 340.1, y = -2015.4, z = 20.8, w = 45.0 },
+                    { x = 344.2, y = -2018.7, z = 20.8, w = 45.0 },
+                    { x = 348.5, y = -2022.1, z = 20.8, w = 45.0 }
+                },
+                pedModel = "g_m_y_salvagoon_01",
+                blip = { sprite = 84, color = 5, scale = 0.8 },
+                price = 0
+            },
+            ["impound_main"] = {
+                label = "Pátio de Apreensão Policial (Impound)",
+                type = "impound",
+                category = "car",
+                coords = { x = 409.12, y = -1623.55, z = 29.3, w = 50.0 },
+                dropZone = {
+                    points = {
+                        { x = 393.0, y = -1622.0, z = 29.3 },
+                        { x = 407.0, y = -1622.0, z = 29.3 },
+                        { x = 407.0, y = -1638.0, z = 29.3 },
+                        { x = 393.0, y = -1638.0, z = 29.3 }
+                    },
+                    thickness = 6.0
+                },
+                spawnCoords = {
+                    { x = 404.1, y = -1630.2, z = 29.3, w = 230.0 },
+                    { x = 400.5, y = -1634.4, z = 29.3, w = 230.0 },
+                    { x = 396.8, y = -1638.6, z = 29.3, w = 230.0 }
+                },
+                pedModel = "s_m_y_valet_01",
+                blip = { sprite = 67, color = 1, scale = 0.75 },
+                price = 0
+            }
+        }
+        parsed = defaultGarages
         SaveResourceFile(resName, "data/garages.json", json.encode(parsed, { indent = true }), -1)
     end
 
