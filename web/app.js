@@ -163,6 +163,8 @@ function renderCards(vehicles) {
             statusBadgeClass = 'status-impound';
         } else if (veh.spawnType === 'insurance') {
             statusBadgeClass = 'status-insurance';
+        } else if (veh.statusLabel && (veh.statusLabel.includes('Residência') || veh.statusLabel.includes('Condomínio'))) {
+            statusBadgeClass = 'status-residential';
         }
 
         const isListMode = currentMode === 'list';
@@ -211,10 +213,18 @@ function renderCards(vehicles) {
             } else if (veh.spawnType === 'out') {
                 garageActionBtn = `<button class="btn-spawn" disabled><i class="fas fa-car-side"></i> JÁ FORA (EM USO)</button>`;
             } else if (veh.spawnType === 'fixed_other') {
-                garageActionBtn = `
-                    <button class="btn-spawn btn-valet-action" data-plate="${veh.plate}" title="Manobrista busca o veículo e traz até você ($150)"><i class="fas fa-bell-concierge"></i> VALET ($150)</button>
-                    <button class="btn-spawn btn-track-garage" data-garage="${veh.garage}" style="margin-left: 6px;"><i class="fas fa-location-dot"></i> GPS</button>
-                `;
+                const isResidential = currentGarageId && (currentGarageId.startsWith('housegarage-') || currentGarageId.startsWith('buildinggarage-'));
+                if (isResidential) {
+                    garageActionBtn = `
+                        <button class="btn-spawn" disabled style="opacity: 0.7; cursor: not-allowed; background: #23252b; color: #9ca3af; border: 1px solid rgba(156, 163, 175, 0.25);"><i class="fas fa-warehouse"></i> OUTRA GARAGEM</button>
+                        <button class="btn-spawn btn-track-garage" data-garage="${veh.garage}" style="margin-left: 6px;"><i class="fas fa-location-dot"></i> GPS</button>
+                    `;
+                } else {
+                    garageActionBtn = `
+                        <button class="btn-spawn btn-valet-action" data-plate="${veh.plate}" title="Manobrista busca o veículo e traz até você ($150)"><i class="fas fa-bell-concierge"></i> VALET ($150)</button>
+                        <button class="btn-spawn btn-track-garage" data-garage="${veh.garage}" style="margin-left: 6px;"><i class="fas fa-location-dot"></i> GPS</button>
+                    `;
+                }
             } else if (veh.spawnType === 'impound') {
                 garageActionBtn = `<button class="btn-spawn" disabled><i class="fas fa-lock"></i> NO IMPOUND</button>`;
             } else if (veh.spawnType === 'locked_grade') {

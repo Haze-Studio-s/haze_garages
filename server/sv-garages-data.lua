@@ -37,6 +37,11 @@ local function normalizeGarage(raw)
         elseif g.dropZone.coords then
             g.dropZone.coords = toVec3(g.dropZone.coords)
         end
+    elseif g.coords then
+        g.dropZone = {
+            coords = toVec3(g.coords),
+            radius = 6.0
+        }
     end
 
     if g.spawnCoords and #g.spawnCoords > 0 then
@@ -67,7 +72,12 @@ local function serializeGarage(g)
         },
         pedModel = g.pedModel or Config.GaragePedModel or "a_m_y_business_01",
         blip = g.blip or { sprite = 357, color = 3, scale = 0.75 },
-        price = g.price or 0
+        price = g.price or 0,
+        hasPed = (g.hasPed ~= false),
+        hasBlip = (g.hasBlip ~= false),
+        isDynamic = (g.isDynamic == true),
+        propertyId = g.propertyId or nil,
+        buildingId = g.buildingId or nil
     }
 
     if g.dropZone then
@@ -287,7 +297,8 @@ function LoadGaragesData()
     return GaragesData
 end
 
---- Salva as garagens em data/garages.json e faz broadcast imediato para todos os clientes
+--- Salva as garagens estáticas em data/garages.json e faz broadcast imediato para todos os clientes
+--- Garagens dinâmicas (ex: ps-housing) são mantidas em memória e não poluem o arquivo JSON
 --- @param garagesTable table Tabela com todas as garagens
 --- @return boolean
 function SaveGaragesData(garagesTable)
@@ -295,14 +306,16 @@ function SaveGaragesData(garagesTable)
 
     local exportTable = {}
     for gId, gData in pairs(garagesTable) do
-        exportTable[gId] = serializeGarage(gData)
+        if not gData.isDynamic then
+            exportTable[gId] = serializeGarage(gData)
+        end
     end
 
     local resName = GetCurrentResourceName()
     local success = SaveResourceFile(resName, "data/garages.json", json.encode(exportTable, { indent = true }), -1)
 
     if success then
-        -- Atualiza memória local do servidor
+        -- Atualiza memória local do servidor preservando garagens dinâmicas
         GaragesData = {}
         Config.FixedGarages = Config.FixedGarages or {}
 
@@ -312,14 +325,101 @@ function SaveGaragesData(garagesTable)
             Config.FixedGarages[gId] = norm
         end
 
+        -- Restaura as garagens dinâmicas na tabela unificada Config.FixedGarages
+        for gId, dNorm in pairs(DynamicGarages or {}) do
+            Config.FixedGarages[gId] = dNorm
+        end
+
         -- Sincroniza em tempo real com todos os jogadores conectados
-        TriggerClientEvent("haze_garages:client:syncGarages", -1, exportTable)
+        local allGaragesSync = {}
+        for gId, gData in pairs(Config.FixedGarages) do
+            allGaragesSync[gId] = serializeGarage(gData)
+        end
+        TriggerClientEvent("haze_garages:client:syncGarages", -1, allGaragesSync)
         print("^2[Haze Garages]^7 Arquivo data/garages.json atualizado no disco e sincronizado em tempo real!")
         return true
     else
         print("^1[Haze Garages] ERRO ao salvar data/garages.json no disco!^7")
         return false
     end
+end
+
+-- =================================================================================
+-- Gerenciador de Garagens Dinâmicas (Residências, Prédios e Eventos em Tempo Real)
+-- =================================================================================
+
+DynamicGarages = DynamicGarages or {}
+
+--- Registra ou atualiza uma garagem dinâmica em tempo real (sem gravar no data/garages.json)
+--- @param garageId string Identificador único da garagem (ex: 'housegarage-12', 'buildinggarage-3')
+--- @param data table Configuração completa da garagem (coords, spawnCoords, dropZone, canAccess, etc.)
+--- @param syncClient boolean|nil Se true ou nil, envia atualização imediata aos clientes conectados
+--- @return boolean success
+function RegisterDynamicGarage(garageId, data, syncClient)
+    if not garageId or type(garageId) ~= "string" or type(data) ~= "table" then
+        print(string.format("^1[Haze Garages] RegisterDynamicGarage chamado com parâmetros inválidos (id: %s)^7", tostring(garageId)))
+        return false
+    end
+
+    local g = table.clone(data)
+    g.id = garageId
+    g.isDynamic = true
+    if g.hasPed == nil then
+        g.hasPed = (g.type ~= "house" and g.type ~= "building")
+    end
+    if g.hasBlip == nil then
+        g.hasBlip = (g.type ~= "house" and g.type ~= "building")
+    end
+
+    local norm = normalizeGarage(g)
+    -- Preserva funções de controle de acesso Lua (que clones ou json não copiam)
+    norm.canAccess = data.canAccess
+    norm.isDynamic = true
+    norm.hasPed = g.hasPed
+    norm.hasBlip = g.hasBlip
+    norm.propertyId = data.propertyId
+    norm.buildingId = data.buildingId
+
+    DynamicGarages[garageId] = norm
+    Config.FixedGarages = Config.FixedGarages or {}
+    Config.FixedGarages[garageId] = norm
+
+    if syncClient ~= false then
+        local serialized = serializeGarage(norm)
+        TriggerClientEvent("haze_garages:client:syncDynamicGarage", -1, garageId, serialized)
+    end
+
+    return true
+end
+
+--- Remove uma garagem dinâmica registrada
+--- @param garageId string Identificador da garagem
+--- @return boolean
+function UnregisterDynamicGarage(garageId)
+    if not garageId then return false end
+    if not Config.FixedGarages or not Config.FixedGarages[garageId] then
+        return false
+    end
+
+    DynamicGarages[garageId] = nil
+    Config.FixedGarages[garageId] = nil
+
+    TriggerClientEvent("haze_garages:client:removeDynamicGarage", -1, garageId)
+    return true
+end
+
+--- Verifica se uma garagem está registrada no sistema
+--- @param garageId string
+--- @return boolean
+function IsGarageRegistered(garageId)
+    return (Config.FixedGarages and Config.FixedGarages[garageId] ~= nil) or false
+end
+
+--- Retorna os dados completos de uma garagem
+--- @param garageId string
+--- @return table|nil
+function GetGarage(garageId)
+    return Config.FixedGarages and Config.FixedGarages[garageId]
 end
 
 -- Callbacks e eventos de sincronização
@@ -338,6 +438,26 @@ end)
 
 exports("SaveGaragesData", function(data)
     return SaveGaragesData(data)
+end)
+
+exports("RegisterDynamicGarage", function(garageId, data, syncClient)
+    return RegisterDynamicGarage(garageId, data, syncClient)
+end)
+
+exports("UnregisterDynamicGarage", function(garageId)
+    return UnregisterDynamicGarage(garageId)
+end)
+
+exports("IsGarageRegistered", function(garageId)
+    return IsGarageRegistered(garageId)
+end)
+
+exports("GetGarage", function(garageId)
+    return GetGarage(garageId)
+end)
+
+exports("GetDynamicGarages", function()
+    return DynamicGarages
 end)
 
 -- Carrega as garagens no boot do servidor

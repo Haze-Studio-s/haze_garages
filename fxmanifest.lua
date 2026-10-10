@@ -65,7 +65,20 @@ exports {
     'StoreVehicleNearestGarage',
     'ImpoundVehicle',
     'IsTrackerInstalled',
-    'IsTrackerJammed'
+    'IsTrackerJammed',
+    'OpenGarageMenu',
+    'StoreVehicleAtGarage',
+    'GetGarageData'
+}
+
+server_exports {
+    'RegisterDynamicGarage',
+    'UnregisterDynamicGarage',
+    'IsGarageRegistered',
+    'GetGarage',
+    'GetGaragesData',
+    'SaveGaragesData',
+    'GetDynamicGarages'
 }
 
 

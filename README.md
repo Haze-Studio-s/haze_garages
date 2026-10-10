@@ -57,6 +57,23 @@
 
 ---
 
+### 6. Garagens Dinâmicas Residenciais (Integração `ps-housing`)
+- **Registro em Tempo Real:** Recursos externos (como `ps-housing` para casas e condomínios) registram e removem garagens dinâmicas em tempo de execução via exports sem alterar `data/garages.json`.
+- **Controle de Acesso Fino:** Callback server-side `canAccess(source, garage)` permitindo que proprietários e co-moradores com permissão concedida usem a garagem.
+- **Privacidade Entre Moradores:** Em condomínios ou casas compartilhadas, cada morador visualiza unicamente os veículos que possui ou aos quais tem autorização direta.
+- **Proteção Anti-Teleporte & Fallback:** Validação de proximidade rígida na dropZone para impedir exploits e teleporte indevido. Fallback universal de raio de 6.0 metros para vagas dinâmicas.
+- **Interface Lation Emerald Adaptada:** Badge visual `.status-residential` ("Guardado na Residência"), desativação de Valet em garagens residenciais e botão de rota GPS rápida.
+- **Exports Disponíveis:**
+  - **Server:**
+    - `exports['haze_garages']:RegisterDynamicGarage(garageData)`: Registra garagem residencial ou de condomínio.
+    - `exports['haze_garages']:UnregisterDynamicGarage(garageId)`: Remove garagem e limpa pontos ativos.
+    - `exports['haze_garages']:IsDynamicGarage(garageId)`: Retorna se a garagem é dinâmica.
+  - **Client:**
+    - `exports['haze_garages']:OpenGarageMenu(garageId)`: Abre o menu da garagem especificada via NUI.
+    - `exports['haze_garages']:StoreVehicleAtGarage(garageId)`: Guarda o veículo atual na garagem.
+
+---
+
 ## 📦 Configuração do Inventário (`ox_inventory`)
 
 Adicione a seguinte definição de item ao arquivo `data/items.lua` do seu `ox_inventory`:

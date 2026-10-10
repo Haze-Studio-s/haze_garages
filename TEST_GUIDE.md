@@ -393,6 +393,38 @@ O sistema conta com um assistente guiado completo para criar e gerenciar garagen
 
 ---
 
+### 🔹 Teste 19: Garagens Dinâmicas Residenciais & Condomínios (`ps-housing` - Fase 5)
+1. **Registro Dinâmico Automático**:
+   - Ao carregar uma propriedade residencial unifamiliar ou condomínio multi-unidades no `ps-housing`, o evento server-side invoca `exports['haze_garages']:RegisterDynamicGarage(...)`.
+   - **Resultado Esperado**:
+     - A garagem fica disponível no servidor sem alterar ou sujar o `data/garages.json`.
+     - Nenhum NPC fixo é spawnado na calçada da residência (clean visual).
+     - Não cria blips públicos desnecessários no mapa de outros jogadores.
+2. **Acesso por Proprietário e Co-Morador Autorizado**:
+   - Aproxime-se da vaga da residência a pé ou em veículo.
+   - TextUI elegante surge no canto: `[E] Garagem Residencial` ou `[E] Guardar Veículo`.
+   - Abra a garagem (`[E]` ou via `ox_target` no condomínio):
+     - Proprietário abre a interface Lation Emerald com sucesso.
+     - Co-morador com permissão `garage` abre a interface com sucesso.
+     - Cidadão sem chave / sem permissão recebe aviso de restrição de acesso.
+3. **Privacidade Entre Moradores (Multi-Unidades / Condomínio)**:
+   - Dois jogadores diferentes moram no mesmo prédio ou compartilham a casa.
+   - Jogador A abre a garagem: visualiza apenas os carros que pertencem ao Jogador A (ou aos quais ele é condutor autorizado).
+   - Jogador B abre a garagem: visualiza apenas os seus próprios carros.
+   - **Resultado Esperado**: Nenhum morador vê nem mexe na frota alheia.
+4. **Armazenamento e Proteção Anti-Teleporte**:
+   - Entre na dropZone com o veículo e pressione `[E]` ou use o target:
+     - O veículo é guardado no banco com estado `state = 1` e `garage = 'house_X'` / `building_Y`.
+     - Se o jogador tentar forçar o evento de guardar a mais de 15 metros da vaga, o servidor rejeita com aviso anti-exploit.
+5. **Interface NUI & Desativação de Valet**:
+   - No card do veículo guardado na residência, a badge exibe a classe verde esmeralda `.status-residential`: `"Guardado na Residência"`.
+   - Em garagens residenciais, a opção de Valet é desabilitada e exibe o botão rápido de GPS.
+6. **Desregistro Dinâmico (Clean Lifecycle)**:
+   - Se a propriedade for deletada, transferida ou se o `ps-housing` for reiniciado:
+     - `exports['haze_garages']:UnregisterDynamicGarage(id)` é invocado, limpando zonas e dados da memória sem deixar pontos órfãos.
+
+---
+
 ## 🔍 Resumo de Comandos Rápidos para Testes
 
 | Comando | Parâmetros | Descrição |

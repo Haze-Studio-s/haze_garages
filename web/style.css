@@ -339,6 +339,13 @@ body {
     border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
+.status-residential {
+    background-color: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+    border: 1px solid rgba(52, 211, 153, 0.4);
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.12);
+}
+
 .status-street {
     background-color: rgba(59, 130, 246, 0.15);
     color: var(--status-street);

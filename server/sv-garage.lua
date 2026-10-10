@@ -18,6 +18,18 @@ local function canPlayerAccessGarage(src, garageData)
     elseif garageData.type == "gang" and garageData.gang then
         local playerGang = Haze.Server.GetPlayerGang(src)
         return playerGang == garageData.gang
+    elseif garageData.type == "house" or garageData.type == "building" or garageData.type == "residential" then
+        if type(garageData.canAccess) == "function" then
+            local ok, allowed = pcall(garageData.canAccess, src)
+            if ok then
+                return allowed == true
+            else
+                print(string.format("^1[Haze Garages] Erro ao executar canAccess para a garagem %s: %s^7", tostring(garageData.id), tostring(allowed)))
+                return false
+            end
+        end
+        -- Se não tiver função canAccess definida na garagem residencial, recusa por segurança (fail-closed)
+        return false
     end
 
     return true
@@ -140,13 +152,18 @@ lib.callback.register("haze_garages:server:getUserVehicles", function(source, ga
                 isSpawnable = false
                 spawnType = "street"
             elseif row.state == 1 then
-                if row.garage == garageId or garageData.type == "public" or not row.garage then
-                    statusLabel = isCoOwner and "Guardado [Autorizado]" or "Guardado nesta Garagem"
+                local isAtThisGarage = (row.garage == garageId)
+                local isPublicFallback = (garageData.type == "public" and (not row.garage or row.garage == ""))
+                local isHouseNewCar = ((garageData.type == "house" or garageData.type == "building") and (not row.garage or row.garage == ""))
+
+                if isAtThisGarage or isPublicFallback or isHouseNewCar then
+                    local labelDesc = (garageData.type == "house" or garageData.type == "building") and "Guardado na Residência" or "Guardado nesta Garagem"
+                    statusLabel = isCoOwner and (labelDesc .. " [Autorizado]") or labelDesc
                     isSpawnable = true
                     spawnType = "fixed"
                 else
                     local otherGarage = Config.FixedGarages[row.garage]
-                    local otherLabel = otherGarage and otherGarage.label or row.garage
+                    local otherLabel = otherGarage and otherGarage.label or (row.garage and row.garage:match("^housegarage%-(%d+)") and ("Residência #" .. row.garage:match("^housegarage%-(%d+)")) or (row.garage and row.garage:match("^buildinggarage%-(%d+)") and ("Condomínio #" .. row.garage:match("^buildinggarage%-(%d+)"))) or row.garage or "Outra Garagem")
                     statusLabel = isCoOwner and ("Em: " .. otherLabel .. " [Autorizado]") or ("Guardado em: " .. otherLabel)
                     isSpawnable = false
                     spawnType = "fixed_other"
@@ -327,6 +344,18 @@ lib.callback.register("haze_garages:server:spawnVehicle", function(source, plate
     if vehRow.state == 3 and garage.type ~= "insurance" then
         releaseSpawnReservation(src, cleanPlate)
         return false, "Este veículo sofreu perda total e está na Seguradora Mors Mutual! Digite /seguro para acionar o resgate da apólice."
+    end
+
+    -- Se for garagem residencial ou de condomínio, o veículo deve estar guardado nela (ou ser novo sem garagem)
+    if (garage.type == "house" or garage.type == "building") then
+        local isAtThisHouse = (vehRow.garage == garageId)
+        local isNewVehicle = (not vehRow.garage or vehRow.garage == "")
+        if not isAtThisHouse and not isNewVehicle then
+            releaseSpawnReservation(src, cleanPlate)
+            local otherGarage = Config.FixedGarages[vehRow.garage]
+            local otherLabel = otherGarage and otherGarage.label or (vehRow.garage and vehRow.garage:match("^housegarage%-(%d+)") and ("Residência #" .. vehRow.garage:match("^housegarage%-(%d+)")) or (vehRow.garage and vehRow.garage:match("^buildinggarage%-(%d+)") and ("Condomínio #" .. vehRow.garage:match("^buildinggarage%-(%d+)"))) or vehRow.garage or "outra garagem")
+            return false, string.format("Este veículo está guardado em %s. Guarde-o nesta residência antes de retirá-lo.", otherLabel)
+        end
     end
 
     -- Se for garagem de impound, processa liberação e multa
