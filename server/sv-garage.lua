@@ -60,12 +60,14 @@ lib.callback.register("haze_garages:server:getUserVehicles", function(source, ga
                hvn.nickname,
                hco.coowner_citizenid,
                hco.coowner_name,
-               hco.owner_citizenid AS real_owner
+               hco.owner_citizenid AS real_owner,
+               gvw.mileage AS granolla_mileage
         FROM player_vehicles pv
         LEFT JOIN haze_street_parking hsp ON hsp.plate = pv.plate
         LEFT JOIN haze_vehicle_deformations hsd ON hsd.plate = pv.plate
         LEFT JOIN haze_vehicle_nicknames hvn ON hvn.plate = pv.plate
         LEFT JOIN haze_vehicle_coowners hco ON hco.plate = pv.plate
+        LEFT JOIN granolla_vehicle_wear gvw ON gvw.plate = pv.plate
         WHERE ((pv.citizenid IS NOT NULL AND pv.citizenid = ?)
            OR (pv.license IS NOT NULL AND pv.license = ?)
            OR (hco.coowner_citizenid IS NOT NULL AND hco.coowner_citizenid = ?))
@@ -80,6 +82,16 @@ lib.callback.register("haze_garages:server:getUserVehicles", function(source, ga
 
         local isCoOwner = (row.coowner_citizenid ~= nil and row.coowner_citizenid == citizenid)
         local isOwner = not isCoOwner
+
+        local vehicleMileage = tonumber(row.granolla_mileage) or 0.0
+        if GetResourceState('granolla_mechanic') == 'started' then
+            pcall(function()
+                local liveMi = exports['granolla_mechanic']:GetMileage(row.plate)
+                if liveMi and liveMi > 0 then
+                    vehicleMileage = liveMi
+                end
+            end)
+        end
 
         local statusLabel = "Desconhecido"
         local isSpawnable = false
@@ -106,7 +118,8 @@ lib.callback.register("haze_garages:server:getUserVehicles", function(source, ga
                     mods = mods,
                     engine = mods.engineHealth or 1000,
                     body = mods.bodyHealth or 1000,
-                    fuel = mods.fuelLevel or 100
+                    fuel = mods.fuelLevel or 100,
+                    mileage = vehicleMileage
                 })
             end
         elseif isInsurance then
@@ -130,7 +143,8 @@ lib.callback.register("haze_garages:server:getUserVehicles", function(source, ga
                     mods = mods,
                     engine = mods.engineHealth or 1000,
                     body = mods.bodyHealth or 1000,
-                    fuel = mods.fuelLevel or 100
+                    fuel = mods.fuelLevel or 100,
+                    mileage = vehicleMileage
                 })
             end
         else
@@ -187,7 +201,8 @@ lib.callback.register("haze_garages:server:getUserVehicles", function(source, ga
                 mods = mods,
                 engine = mods.engineHealth or 1000,
                 body = mods.bodyHealth or 1000,
-                fuel = mods.fuelLevel or 100
+                fuel = mods.fuelLevel or 100,
+                mileage = vehicleMileage
             })
         end
     end
@@ -221,7 +236,8 @@ lib.callback.register("haze_garages:server:getUserVehicles", function(source, ga
                 mods = {},
                 engine = 1000,
                 body = 1000,
-                fuel = 100
+                fuel = 100,
+                mileage = 0.0
             })
         end
     end
@@ -410,13 +426,27 @@ lib.callback.register("haze_garages:server:spawnVehicle", function(source, plate
     end
 
     releaseSpawnReservation(src, cleanPlate)
+    local vehicleMileage = 0.0
+    if GetResourceState('granolla_mechanic') == 'started' then
+        pcall(function()
+            vehicleMileage = exports['granolla_mechanic']:GetMileage(cleanPlate) or 0.0
+        end)
+    end
+    if vehicleMileage == 0.0 then
+        local gvwRow = MySQL.single.await("SELECT mileage FROM granolla_vehicle_wear WHERE plate = ?", { cleanPlate })
+        if gvwRow and gvwRow.mileage then
+            vehicleMileage = tonumber(gvwRow.mileage) or 0.0
+        end
+    end
+
     return true, {
         plate = cleanPlate,
         model = vehRow.vehicle or vehRow.model,
         mods = vehRow.mods and json.decode(vehRow.mods) or nil,
         deformation = defRow and defRow.deformation and json.decode(defRow.deformation) or nil,
         mechanical = defRow and defRow.mechanical_damage and json.decode(defRow.mechanical_damage) or nil,
-        spawnCoords = garage.spawnCoords
+        spawnCoords = garage.spawnCoords,
+        mileage = vehicleMileage
     }
 end)
 

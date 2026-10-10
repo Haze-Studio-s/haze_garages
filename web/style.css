@@ -424,6 +424,18 @@ body {
     transition: width 0.3s;
 }
 
+.mileage-val {
+    font-family: 'JetBrains Mono', monospace !important;
+    color: var(--accent-bright) !important;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.progress-bar-mileage {
+    background: linear-gradient(90deg, #10b981 0%, #6afe87 100%) !important;
+    box-shadow: 0 0 6px rgba(106, 254, 135, 0.35);
+}
+
 .modal-footer {
     padding: 10px 20px;
     background-color: var(--bg-secondary);

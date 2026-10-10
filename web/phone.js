@@ -59,6 +59,8 @@ function renderVehicles(vehicles) {
         const enginePct = Math.min(100, Math.max(0, Math.round((veh.engine / 1000) * 100)));
         const bodyPct = Math.min(100, Math.max(0, Math.round((veh.body / 1000) * 100)));
         const fuelPct = Math.min(100, Math.max(0, Math.round(veh.fuel || 100)));
+        const mileageNum = veh.mileage ? parseFloat(veh.mileage) : 0.0;
+        const mileageFormatted = mileageNum.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
         // Status Badge Logic
         let statusClass = 'status-fixed';
@@ -131,8 +133,12 @@ function renderVehicles(vehicles) {
                     <div class="mini-bar-bg"><div class="mini-bar-fill" style="width: ${bodyPct}%"></div></div>
                 </div>
                 <div class="mini-stat">
-                    <span class="mini-stat-label"><span>Combustível</span> <b>${fuelPct}%</b></span>
+                    <span class="mini-stat-label"><span>Gasolina</span> <b>${fuelPct}%</b></span>
                     <div class="mini-bar-bg"><div class="mini-bar-fill" style="width: ${fuelPct}%"></div></div>
+                </div>
+                <div class="mini-stat" title="Odômetro Total">
+                    <span class="mini-stat-label"><span>Milhagem</span> <b style="font-family: 'JetBrains Mono'; color: var(--accent-bright); font-size: 0.62rem;">${mileageFormatted} mi</b></span>
+                    <div class="mini-bar-bg"><div class="mini-bar-fill" style="width: ${Math.min(100, Math.max(8, Math.round((mileageNum % 1000) / 10)))}%; background: linear-gradient(90deg, #10b981, #6afe87);"></div></div>
                 </div>
             </div>
 

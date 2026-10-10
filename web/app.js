@@ -145,7 +145,8 @@ function renderCards(vehicles) {
         const enginePct = Math.min(100, Math.max(0, Math.round((veh.engine / 1000) * 100)));
         const bodyPct = Math.min(100, Math.max(0, Math.round((veh.body / 1000) * 100)));
         const fuelPct = Math.min(100, Math.max(0, Math.round(veh.fuel)));
-        const mileageVal = veh.mileage ? parseFloat(veh.mileage).toFixed(1) : '0.0';
+        const mileageNum = veh.mileage ? parseFloat(veh.mileage) : 0.0;
+        const mileageFormatted = mileageNum.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
         const hasNickname = veh.nickname && veh.nickname.trim() !== '';
         const nicknameHtml = hasNickname ? `<span class="nickname-tag"><i class="fas fa-tag"></i> ${veh.nickname}</span>` : '';
@@ -275,10 +276,10 @@ function renderCards(vehicles) {
                         <div class="progress-bar-fill" style="width: ${fuelPct}%"></div>
                     </div>
                 </div>
-                <div class="stat-item">
-                    <span class="stat-label"><span><i class="fas fa-road"></i> KM</span> <b>${mileageVal}</b></span>
+                <div class="stat-item stat-item-mileage" title="Odômetro: ${mileageFormatted} mi (granolla_mechanic)">
+                    <span class="stat-label"><span><i class="fas fa-road"></i> Milhagem</span> <b class="mileage-val">${mileageFormatted} mi</b></span>
                     <div class="progress-bar-bg">
-                        <div class="progress-bar-fill" style="width: ${Math.min(100, Math.round(mileageVal / 10))}%"></div>
+                        <div class="progress-bar-fill progress-bar-mileage" style="width: ${Math.min(100, Math.max(8, Math.round((mileageNum % 1000) / 10)))}%"></div>
                     </div>
                 </div>
             </div>

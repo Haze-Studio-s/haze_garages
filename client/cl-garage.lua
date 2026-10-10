@@ -644,6 +644,8 @@ RegisterNetEvent("haze_garages:client:openGarageMenu", function(garageId)
             end)
         end
 
+        local vehMileage = (wearInfo and wearInfo.mileage) or v.mileage or 0.0
+
         nuiVehicles[#nuiVehicles + 1] = {
             plate = plate,
             model = string.upper(model),
@@ -657,7 +659,7 @@ RegisterNetEvent("haze_garages:client:openGarageMenu", function(garageId)
             engine = mods.engineHealth or v.engine or 1000,
             body = mods.bodyHealth or v.body or 1000,
             fuel = mods.fuelLevel or v.fuel or 100,
-            mileage = v.mileage or 0,
+            mileage = vehMileage,
             wear = wearInfo and wearInfo.wear or nil
         }
     end
@@ -710,6 +712,10 @@ RegisterNetEvent("haze_garages:client:spawnVehicle", function(plate, garageId)
 
     if payload.deformation or payload.mechanical then
         TriggerEvent("haze_garages:client:applyVehicleDeformation", veh, payload.deformation, payload.mechanical)
+    end
+
+    if payload.mileage and payload.mileage > 0 then
+        Entity(veh).state:set("vehicleMileage", math.floor(payload.mileage * 10) / 10, true)
     end
 
     local netId = NetworkGetNetworkIdFromEntity(veh)

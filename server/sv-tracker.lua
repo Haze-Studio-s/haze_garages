@@ -238,7 +238,8 @@ lib.callback.register("haze_garages:server:getPhoneVehicles", function(source)
             body = mods.bodyHealth or 1000,
             fuel = mods.fuelLevel or 100,
             trackerInstalled = row.tracker_installed_by ~= nil,
-            isJammed = row.is_jammed == 1
+            isJammed = row.is_jammed == 1,
+            mileage = tonumber(row.mileage) or 0.0
         })
     end
 
