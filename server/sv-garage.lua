@@ -26,23 +26,110 @@ end
 lib.callback.register("haze_garages:server:getUserVehicles", function(source, garageId)
     local src = source
     local citizenid = Haze.Server.GetPlayerIdentifier(src)
-    if not citizenid then return {} end
+    if not citizenid then return { success = false, reason = "invalid_identifier" } end
 
     local garageData = Config.FixedGarages[garageId]
-    if not canPlayerAccessGarage(src, garageData) then
-        return {}
+    if not garageData then
+        return { success = false, reason = "invalid_garage" }
     end
 
-    local rows = MySQL.query.await([[
-        SELECT pv.*, hsd.deformation, hsd.mechanical_damage, hvn.nickname
-        FROM player_vehicles pv
-        LEFT JOIN haze_vehicle_deformations hsd ON hsd.plate COLLATE utf8mb4_unicode_ci = pv.plate COLLATE utf8mb4_unicode_ci
-        LEFT JOIN haze_vehicle_nicknames hvn ON hvn.plate COLLATE utf8mb4_unicode_ci = pv.plate COLLATE utf8mb4_unicode_ci
-        WHERE (pv.citizenid IS NOT NULL AND pv.citizenid COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci)
-           OR (pv.license IS NOT NULL AND pv.license COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci)
-    ]], { citizenid or "NONE", citizenid or "NONE" })
+    if not canPlayerAccessGarage(src, garageData) then
+        return { success = false, reason = "no_permission" }
+    end
 
-    return rows or {}
+    local isImpound = garageData.type == "impound"
+
+    local query = [[
+        SELECT pv.*, 
+               hsp.coords AS street_coords,
+               hsd.deformation, 
+               hsd.mechanical_damage, 
+               hvn.nickname
+        FROM player_vehicles pv
+        LEFT JOIN haze_street_parking hsp ON hsp.plate = pv.plate
+        LEFT JOIN haze_vehicle_deformations hsd ON hsd.plate = pv.plate
+        LEFT JOIN haze_vehicle_nicknames hvn ON hvn.plate = pv.plate
+        WHERE ((pv.citizenid IS NOT NULL AND pv.citizenid = ?)
+           OR (pv.license IS NOT NULL AND pv.license = ?))
+    ]]
+
+    local rows = MySQL.query.await(query, { citizenid or "NONE", citizenid or "NONE" })
+    local vehicles = {}
+
+    for _, row in ipairs(rows or {}) do
+        local mods = row.mods and json.decode(row.mods) or {}
+        local streetCoords = row.street_coords and json.decode(row.street_coords) or nil
+
+        local statusLabel = "Desconhecido"
+        local isSpawnable = false
+        local spawnType = "none"
+
+        if isImpound then
+            if row.state == 2 then
+                statusLabel = "Apreendido no Pátio"
+                isSpawnable = true
+                spawnType = "impound"
+                table.insert(vehicles, {
+                    plate = row.plate,
+                    model = row.vehicle or row.model or "Desconhecido",
+                    nickname = row.nickname or "",
+                    state = row.state,
+                    garage = row.garage,
+                    statusLabel = statusLabel,
+                    isSpawnable = isSpawnable,
+                    spawnType = spawnType,
+                    mods = mods,
+                    engine = mods.engineHealth or 1000,
+                    body = mods.bodyHealth or 1000,
+                    fuel = mods.fuelLevel or 100
+                })
+            end
+        else
+            -- Garagem Normal (Pública, Job ou Gang)
+            if row.state == 2 then
+                statusLabel = "Apreendido (Impound)"
+                isSpawnable = false
+                spawnType = "impound"
+            elseif row.state == 0 then
+                statusLabel = "Na Rua / Em Uso"
+                isSpawnable = false
+                spawnType = "out"
+            elseif streetCoords then
+                statusLabel = "Estacionado na Rua"
+                isSpawnable = false
+                spawnType = "street"
+            elseif row.state == 1 then
+                if row.garage == garageId or garageData.type == "public" or not row.garage then
+                    statusLabel = "Guardado nesta Garagem"
+                    isSpawnable = true
+                    spawnType = "fixed"
+                else
+                    local otherGarage = Config.FixedGarages[row.garage]
+                    statusLabel = "Guardado em: " .. (otherGarage and otherGarage.label or row.garage)
+                    isSpawnable = false
+                    spawnType = "fixed_other"
+                end
+            end
+
+            table.insert(vehicles, {
+                plate = row.plate,
+                model = row.vehicle or row.model or "Desconhecido",
+                nickname = row.nickname or "",
+                state = row.state,
+                garage = row.garage,
+                statusLabel = statusLabel,
+                isSpawnable = isSpawnable,
+                spawnType = spawnType,
+                streetCoords = streetCoords,
+                mods = mods,
+                engine = mods.engineHealth or 1000,
+                body = mods.bodyHealth or 1000,
+                fuel = mods.fuelLevel or 100
+            })
+        end
+    end
+
+    return { success = true, vehicles = vehicles }
 end)
 
 
@@ -67,15 +154,68 @@ lib.callback.register("haze_garages:server:spawnVehicle", function(source, plate
 
     spawnReservations[cleanPlate] = { src = src, time = os.time() }
 
-    local vehRow = MySQL.single.await("SELECT * FROM player_vehicles WHERE plate = ? AND citizenid = ?", { cleanPlate, citizenid })
+    local vehRow = MySQL.single.await("SELECT * FROM player_vehicles WHERE plate = ? AND (citizenid = ? OR license = ?)", { cleanPlate, citizenid, citizenid })
     if not vehRow then
         releaseSpawnReservation(src, cleanPlate)
         return false, Locale.not_vehicle_owner
     end
 
+    -- Se o veículo já estiver fora da garagem (em uso)
+    if vehRow.state == 0 then
+        releaseSpawnReservation(src, cleanPlate)
+        return false, "Este veículo já está fora da garagem (em uso na rua)! Localize-o ou guarde-o antes de retirar novamente."
+    end
+
+    -- Se o veículo estiver apreendido e a garagem NÃO for de impound
+    if vehRow.state == 2 and garage.type ~= "impound" then
+        releaseSpawnReservation(src, cleanPlate)
+        return false, "Este veículo está apreendido pela polícia! Dirija-se ao Pátio de Apreensão (Impound)."
+    end
+
+    -- Se for garagem de impound, processa liberação e multa
+    if garage.type == "impound" then
+        local impRow = MySQL.single.await([[
+            SELECT *, TIMESTAMPDIFF(MINUTE, NOW(), DATE_ADD(impounded_at, INTERVAL duration_minutes MINUTE)) AS minutes_left
+            FROM haze_vehicle_impounds 
+            WHERE plate = ?
+        ]], { cleanPlate })
+
+        if impRow then
+            local minutesLeft = tonumber(impRow.minutes_left) or 0
+            if minutesLeft > 0 then
+                releaseSpawnReservation(src, cleanPlate)
+                return false, string.format("O veículo está cumprindo retenção obrigatória. Faltam %d minutos.", minutesLeft)
+            end
+
+            local fine = tonumber(impRow.fine_amount) or 0
+            if fine > 0 then
+                local bankBalance = Haze.Server.GetPlayerMoney(src, "bank")
+                if bankBalance < fine then
+                    releaseSpawnReservation(src, cleanPlate)
+                    return false, string.format("Saldo bancário insuficiente para pagar a multa de apreensão ($%d).", fine)
+                end
+                Haze.Server.RemovePlayerMoney(src, "bank", fine)
+                Haze.Server.Notify(src, string.format("Multa de apreensão de $%d debitada da sua conta bancária.", fine), "success")
+            end
+
+            MySQL.query.await("DELETE FROM haze_vehicle_impounds WHERE plate = ?", { cleanPlate })
+        end
+    end
+
+    -- Remove duplicata física se já existir no mundo
+    for _, veh in ipairs(GetAllVehicles()) do
+        if DoesEntityExist(veh) then
+            local p = GetVehicleNumberPlateText(veh)
+            if Haze.Shared.CleanPlate(p) == cleanPlate then
+                DeleteEntity(veh)
+                break
+            end
+        end
+    end
+
     local defRow = MySQL.single.await("SELECT * FROM haze_vehicle_deformations WHERE plate = ?", { cleanPlate })
 
-    MySQL.query("UPDATE player_vehicles SET state = 0 WHERE plate = ?", { cleanPlate })
+    MySQL.query("UPDATE player_vehicles SET state = 0, garage = ? WHERE plate = ?", { garageId, cleanPlate })
     Haze.Server.GiveKey(src, cleanPlate)
 
     releaseSpawnReservation(src, cleanPlate)
@@ -95,12 +235,13 @@ lib.callback.register("haze_garages:server:storeVehicle", function(source, plate
     if not citizenid then return false, "Identificador inválido." end
 
     local garageData = Config.FixedGarages[garageId]
+    if not garageData then return false, "Garagem inválida." end
     if not canPlayerAccessGarage(src, garageData) then
         return false, Locale.no_permission
     end
 
     local cleanPlate = Haze.Shared.CleanPlate(plate)
-    local isOwner = MySQL.scalar.await("SELECT 1 FROM player_vehicles WHERE plate = ? AND citizenid = ?", { cleanPlate, citizenid })
+    local isOwner = MySQL.scalar.await("SELECT 1 FROM player_vehicles WHERE plate = ? AND (citizenid = ? OR license = ?)", { cleanPlate, citizenid, citizenid })
     if not isOwner then
         return false, Locale.not_vehicle_owner
     end
@@ -110,6 +251,8 @@ lib.callback.register("haze_garages:server:storeVehicle", function(source, plate
     else
         MySQL.query("UPDATE player_vehicles SET state = 1, garage = ? WHERE plate = ?", { garageId, cleanPlate })
     end
+
+    MySQL.query("DELETE FROM haze_street_parking WHERE plate = ?", { cleanPlate })
 
     if deformationData or mechanicalData then
         MySQL.query([[
@@ -123,8 +266,66 @@ lib.callback.register("haze_garages:server:storeVehicle", function(source, plate
     end
 
     Haze.Server.RemoveKey(src, cleanPlate)
-    Haze.Server.Notify(src, Locale.vehicle_stored, "success")
-    return true
+    Haze.Server.Notify(src, string.format("Veículo [%s] guardado na %s com sucesso!", cleanPlate, garageData.label), "success")
+    return true, { garageLabel = garageData.label }
+end)
+
+RegisterNetEvent("haze_garages:server:ejectPassengers", function(netId)
+    if not netId then return end
+    TriggerClientEvent("haze_garages:client:forceLeaveVehicle", -1, netId)
+end)
+
+lib.callback.register("haze_garages:server:recoverStrandedVehicle", function(source, plate)
+    local src = source
+    local citizenid = Haze.Server.GetPlayerIdentifier(src)
+    if not citizenid or not plate then return { success = false, msg = "Identificador ou placa inválida." } end
+
+    local cleanPlate = Haze.Shared.CleanPlate(plate)
+    local vehRow = MySQL.single.await("SELECT * FROM player_vehicles WHERE plate = ? AND (citizenid = ? OR license = ?)", { cleanPlate, citizenid, citizenid })
+    if not vehRow then
+        return { success = false, msg = "Veículo não encontrado ou não pertence a você." }
+    end
+
+    if vehRow.state ~= 1 then
+        return { success = false, msg = "Apenas veículos guardados em garagens podem ser rebocados." }
+    end
+
+    local currentGarage = Config.FixedGarages[vehRow.garage]
+    if not currentGarage then
+        return { success = false, msg = "Garagem do veículo não identificada." }
+    end
+
+    if canPlayerAccessGarage(src, currentGarage) then
+        return { success = false, msg = "Você ainda possui acesso normal a esta garagem! Vá até ela para retirar seu veículo." }
+    end
+
+    local fee = Config.TowRecoveryFee or 500
+    local bankBalance = Haze.Server.GetPlayerMoney(src, "bank")
+    local cashBalance = Haze.Server.GetPlayerMoney(src, "cash")
+    local paid = false
+
+    if bankBalance >= fee then
+        paid = Haze.Server.RemovePlayerMoney(src, "bank", fee)
+    elseif cashBalance >= fee then
+        paid = Haze.Server.RemovePlayerMoney(src, "cash", fee)
+    end
+
+    if not paid then
+        return { success = false, msg = string.format("Saldo insuficiente para pagar o guincho ($%d necessário no banco ou dinheiro).", fee) }
+    end
+
+    local targetGarage = Config.DefaultPublicGarage or "legion_square"
+    MySQL.query.await("UPDATE player_vehicles SET garage = ? WHERE plate = ?", { targetGarage, cleanPlate })
+
+    local targetGarageLabel = Config.FixedGarages[targetGarage] and Config.FixedGarages[targetGarage].label or "Garagem Central"
+    Haze.Server.Notify(src, string.format("Veículo [%s] rebocado com sucesso para a %s! Taxa de guincho de $%d debitada.", cleanPlate, targetGarageLabel, fee), "success")
+
+    return {
+        success = true,
+        newGarage = targetGarage,
+        newGarageLabel = targetGarageLabel,
+        coords = Config.FixedGarages[targetGarage] and Config.FixedGarages[targetGarage].coords or nil
+    }
 end)
 
 lib.callback.register("haze_garages:server:getDetailedPlayerVehicles", function(source)
@@ -142,8 +343,6 @@ lib.callback.register("haze_garages:server:getDetailedPlayerVehicles", function(
         end
     end
 
-    print(string.format("^3[Haze Garages]^7 Buscando veículos para citizenid: '%s' | license: '%s' (src: %s)", tostring(citizenid), tostring(license), tostring(src)))
-
     local pvRows = MySQL.query.await([[
         SELECT pv.*, 
                hsp.coords AS street_coords,
@@ -154,15 +353,13 @@ lib.callback.register("haze_garages:server:getDetailedPlayerVehicles", function(
                gvw.mileage,
                hvn.nickname
         FROM player_vehicles pv
-        LEFT JOIN haze_street_parking hsp ON hsp.plate COLLATE utf8mb4_unicode_ci = pv.plate COLLATE utf8mb4_unicode_ci
-        LEFT JOIN haze_vehicle_deformations hsd ON hsd.plate COLLATE utf8mb4_unicode_ci = pv.plate COLLATE utf8mb4_unicode_ci
-        LEFT JOIN granolla_vehicle_wear gvw ON gvw.plate COLLATE utf8mb4_unicode_ci = pv.plate COLLATE utf8mb4_unicode_ci
-        LEFT JOIN haze_vehicle_nicknames hvn ON hvn.plate COLLATE utf8mb4_unicode_ci = pv.plate COLLATE utf8mb4_unicode_ci
-        WHERE (pv.citizenid IS NOT NULL AND pv.citizenid COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci)
-           OR (pv.license IS NOT NULL AND pv.license COLLATE utf8mb4_unicode_ci = ? COLLATE utf8mb4_unicode_ci)
+        LEFT JOIN haze_street_parking hsp ON hsp.plate = pv.plate
+        LEFT JOIN haze_vehicle_deformations hsd ON hsd.plate = pv.plate
+        LEFT JOIN granolla_vehicle_wear gvw ON gvw.plate = pv.plate
+        LEFT JOIN haze_vehicle_nicknames hvn ON hvn.plate = pv.plate
+        WHERE (pv.citizenid IS NOT NULL AND pv.citizenid = ?)
+           OR (pv.license IS NOT NULL AND pv.license = ?)
     ]], { citizenid or "NONE", license or "NONE" })
-
-    print(string.format("^2[Haze Garages]^7 Total de veículos encontrados no DB: %d", #(pvRows or {})))
 
     local vehicles = {}
     for _, row in ipairs(pvRows or {}) do
@@ -174,20 +371,28 @@ lib.callback.register("haze_garages:server:getDetailedPlayerVehicles", function(
         local isSpawnable = false
         local spawnType = "none"
 
-        if row.state == 1 then
-            if row.garage and Config.FixedGarages[row.garage] then
-                statusLabel = Config.FixedGarages[row.garage].label or ("Garagem: " .. row.garage)
-                isSpawnable = true
-                spawnType = "fixed"
-            else
-                statusLabel = "Guardado em Garagem Fixa"
-                isSpawnable = true
-                spawnType = "fixed_default"
-            end
-        elseif streetCoords then
+        if streetCoords then
             statusLabel = "Estacionado na Rua"
             isSpawnable = true
             spawnType = "street"
+        elseif row.state == 1 then
+            local gData = row.garage and Config.FixedGarages[row.garage] or nil
+            if gData then
+                local hasAccess = canPlayerAccessGarage(src, gData)
+                if not hasAccess and (gData.type == "job" or gData.type == "gang") then
+                    statusLabel = (gData.label or row.garage) .. " (SEM ACESSO)"
+                    isSpawnable = false
+                    spawnType = "stranded"
+                else
+                    statusLabel = gData.label or ("Garagem: " .. row.garage)
+                    isSpawnable = false
+                    spawnType = "fixed"
+                end
+            else
+                statusLabel = "Guardado em Garagem Fixa"
+                isSpawnable = false
+                spawnType = "fixed"
+            end
         elseif row.state == 2 then
             statusLabel = "Apreendido / Impound"
             isSpawnable = false
@@ -258,32 +463,28 @@ lib.callback.register("haze_garages:server:unparkOrSpawnVehicle", function(sourc
     if not citizenid then return false, "Identificador inválido." end
 
     local cleanPlate = Haze.Shared.CleanPlate(plate)
-    local vehRow = MySQL.single.await("SELECT * FROM player_vehicles WHERE plate = ? AND citizenid = ?", { cleanPlate, citizenid })
+    local vehRow = MySQL.single.await("SELECT * FROM player_vehicles WHERE plate = ? AND (citizenid = ? OR license = ?)", { cleanPlate, citizenid, citizenid })
     if not vehRow then
         return false, Locale.not_vehicle_owner
     end
 
     local streetRow = MySQL.single.await("SELECT * FROM haze_street_parking WHERE plate = ?", { cleanPlate })
-    local defRow = MySQL.single.await("SELECT * FROM haze_vehicle_deformations WHERE plate = ?", { cleanPlate })
-
-    local spawnCoords = nil
-
-    if streetRow and streetRow.coords then
-        spawnCoords = json.decode(streetRow.coords)
-        MySQL.query("DELETE FROM haze_street_parking WHERE plate = ?", { cleanPlate })
-    elseif vehRow.garage and Config.FixedGarages[vehRow.garage] then
-        spawnCoords = Config.FixedGarages[vehRow.garage].spawnCoords
-    else
-        local defaultG = Config.FixedGarages["legion_square"]
-        spawnCoords = defaultG and defaultG.spawnCoords or vec4(222.10, -805.20, 30.6, 140.0)
+    if not streetRow or not streetRow.coords then
+        local garageName = vehRow.garage and Config.FixedGarages[vehRow.garage] and Config.FixedGarages[vehRow.garage].label or "Garagem Física"
+        return false, string.format("Este veículo está guardado na %s. Use o GPS e vá até a garagem física para retirá-lo.", garageName)
     end
+
+    local spawnCoords = json.decode(streetRow.coords)
+    MySQL.query("DELETE FROM haze_street_parking WHERE plate = ?", { cleanPlate })
+
+    local defRow = MySQL.single.await("SELECT * FROM haze_vehicle_deformations WHERE plate = ?", { cleanPlate })
 
     MySQL.query("UPDATE player_vehicles SET state = 0 WHERE plate = ?", { cleanPlate })
     Haze.Server.GiveKey(src, cleanPlate)
 
     return true, {
         plate = cleanPlate,
-        model = streetRow and streetRow.model or vehRow.vehicle or vehRow.model,
+        model = streetRow.model or vehRow.vehicle or vehRow.model,
         mods = vehRow.mods and json.decode(vehRow.mods) or nil,
         deformation = defRow and defRow.deformation and json.decode(defRow.deformation) or nil,
         mechanical = defRow and defRow.mechanical_damage and json.decode(defRow.mechanical_damage) or nil,

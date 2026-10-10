@@ -114,13 +114,44 @@ function Haze.Server.GetMoney(src)
 end
 
 function Haze.Server.RemoveMoney(src, amount)
+    return Haze.Server.RemovePlayerMoney(src, 'cash', amount)
+end
+
+function Haze.Server.GetPlayerMoney(src, moneyType)
     src = tonumber(src)
-    if amount <= 0 then return true end
+    moneyType = moneyType or "cash"
+    local player = Haze.Server.GetPlayer(src)
+    if player and player.PlayerData and player.PlayerData.money then
+        return player.PlayerData.money[moneyType] or 0
+    end
+
+    if GetResourceState('es_extended') == 'started' then
+        local ok, ESX = pcall(function() return exports['es_extended']:getSharedObject() end)
+        if ok and ESX then
+            local xPlayer = ESX.GetPlayerFromId(src)
+            if xPlayer then
+                if moneyType == "bank" then
+                    local acct = xPlayer.getAccount('bank')
+                    return acct and acct.money or 0
+                else
+                    return xPlayer.getMoney() or 0
+                end
+            end
+        end
+    end
+    return 0
+end
+
+function Haze.Server.RemovePlayerMoney(src, moneyType, amount)
+    src = tonumber(src)
+    if not amount or amount <= 0 then return true end
+    moneyType = moneyType or "cash"
 
     local player = Haze.Server.GetPlayer(src)
     if player and player.Functions and player.PlayerData and player.PlayerData.money then
-        if (player.PlayerData.money.cash or 0) >= amount then
-            player.Functions.RemoveMoney('cash', amount, "haze-garages-payment")
+        local current = player.PlayerData.money[moneyType] or 0
+        if current >= amount then
+            player.Functions.RemoveMoney(moneyType, amount, "haze-garages-payment")
             return true
         end
         return false
@@ -130,9 +161,19 @@ function Haze.Server.RemoveMoney(src, amount)
         local ok, ESX = pcall(function() return exports['es_extended']:getSharedObject() end)
         if ok and ESX then
             local xPlayer = ESX.GetPlayerFromId(src)
-            if xPlayer and xPlayer.getMoney() >= amount then
-                xPlayer.removeMoney(amount)
-                return true
+            if xPlayer then
+                if moneyType == "bank" then
+                    local acct = xPlayer.getAccount('bank')
+                    if acct and acct.money >= amount then
+                        xPlayer.removeAccountMoney('bank', amount)
+                        return true
+                    end
+                else
+                    if xPlayer.getMoney() >= amount then
+                        xPlayer.removeMoney(amount)
+                        return true
+                    end
+                end
             end
         end
         return false

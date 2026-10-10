@@ -19,7 +19,8 @@ client_scripts {
     'client/cl-garage.lua',
     'client/cl-street-parking.lua',
     'client/cl-parking-meters.lua',
-    'client/cl-deformation.lua'
+    'client/cl-deformation.lua',
+    'client/cl-tracker.lua'
 }
 
 server_scripts {
@@ -29,7 +30,10 @@ server_scripts {
     'server/sv-garage.lua',
     'server/sv-street-parking.lua',
     'server/sv-parking-meters.lua',
-    'server/sv-deformation.lua'
+    'server/sv-deformation.lua',
+    'server/sv-autostore.lua',
+    'server/sv-tracker.lua',
+    'server/sv-impound.lua'
 }
 
 ui_page 'web/index.html'
@@ -37,11 +41,19 @@ ui_page 'web/index.html'
 files {
     'web/index.html',
     'web/style.css',
-    'web/app.js'
+    'web/app.js',
+    'web/phone.html',
+    'web/phone.css',
+    'web/phone.js',
+    'web/icon.png'
 }
 
 exports {
     'dvVehicle',
-    'StoreVehicleNearestGarage'
+    'StoreVehicleNearestGarage',
+    'ImpoundVehicle',
+    'IsTrackerInstalled',
+    'IsTrackerJammed'
 }
+
 

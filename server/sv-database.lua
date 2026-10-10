@@ -81,10 +81,36 @@ MySQL.ready(function()
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ]])
 
+    MySQL.query([[
+        CREATE TABLE IF NOT EXISTS haze_vehicle_trackers (
+            plate VARCHAR(32) NOT NULL,
+            installed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            installed_by VARCHAR(100) DEFAULT NULL,
+            jammed_until TIMESTAMP NULL DEFAULT NULL,
+            PRIMARY KEY (plate)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ]])
+
+    MySQL.query([[
+        CREATE TABLE IF NOT EXISTS haze_vehicle_impounds (
+            plate VARCHAR(32) NOT NULL,
+            reason VARCHAR(255) DEFAULT 'Apreensão Policial',
+            fine_amount INT DEFAULT 0,
+            impounded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            duration_minutes INT DEFAULT 0,
+            impounded_by VARCHAR(100) DEFAULT NULL,
+            impound_lot VARCHAR(64) DEFAULT 'impound_main',
+            PRIMARY KEY (plate)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ]])
+
     pcall(function()
         MySQL.query.await("ALTER TABLE haze_vehicle_nicknames CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;")
+        MySQL.query.await("ALTER TABLE haze_vehicle_trackers CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;")
+        MySQL.query.await("ALTER TABLE haze_vehicle_impounds CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;")
     end)
 
     print("^2[Haze Garages]^7 Tabelas de banco de dados inicializadas e verificadas com sucesso.")
 end)
+
 

@@ -86,4 +86,42 @@ function Haze.Client.RequestModel(model, timeout)
     return HasModelLoaded(modelHash)
 end
 
+function Haze.Client.GetPlayerJob()
+    if GetResourceState('qbx_core') == 'started' then
+        local ok, pData = pcall(function() return exports.qbx_core:GetPlayerData() end)
+        if ok and pData and pData.job then return pData.job.name or "unemployed" end
+    end
+    if GetResourceState('qb-core') == 'started' then
+        local ok, QBCore = pcall(function() return exports['qb-core']:GetCoreObject() end)
+        if ok and QBCore and QBCore.Functions then
+            local pData = QBCore.Functions.GetPlayerData()
+            if pData and pData.job then return pData.job.name or "unemployed" end
+        end
+    end
+    if GetResourceState('es_extended') == 'started' then
+        local ok, ESX = pcall(function() return exports['es_extended']:getSharedObject() end)
+        if ok and ESX then
+            local pData = ESX.GetPlayerData()
+            if pData and pData.job then return pData.job.name or "unemployed" end
+        end
+    end
+    return "unemployed"
+end
+
+function Haze.Client.GetPlayerGang()
+    if GetResourceState('qbx_core') == 'started' then
+        local ok, pData = pcall(function() return exports.qbx_core:GetPlayerData() end)
+        if ok and pData and pData.gang then return pData.gang.name or "none" end
+    end
+    if GetResourceState('qb-core') == 'started' then
+        local ok, QBCore = pcall(function() return exports['qb-core']:GetCoreObject() end)
+        if ok and QBCore and QBCore.Functions then
+            local pData = QBCore.Functions.GetPlayerData()
+            if pData and pData.gang then return pData.gang.name or "none" end
+        end
+    end
+    return "none"
+end
+
+
 

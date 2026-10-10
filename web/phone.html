@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Haze Garages Phone App</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="phone.css">
+</head>
+<body>
+    <div id="phone-app-container">
+        <header class="app-header">
+            <div class="header-top">
+                <div class="app-title-group">
+                    <i class="fas fa-warehouse app-icon"></i>
+                    <div>
+                        <h2>Garagens</h2>
+                        <span class="sub-title">Haze Garages</span>
+                    </div>
+                </div>
+                <button id="refresh-btn" class="icon-btn" title="Atualizar"><i class="fas fa-sync-alt"></i></button>
+            </div>
+            <div class="search-bar-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="phone-search-input" placeholder="Buscar veículo ou placa..." autocomplete="off">
+            </div>
+        </header>
+
+        <main class="app-content">
+            <div id="phone-vehicle-list" class="vehicle-list">
+                <div class="loading-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Carregando veículos...</p>
+                </div>
+            </div>
+        </main>
+
+        <footer class="app-footer">
+            <span id="vehicle-count-info">0 veículos cadastrados</span>
+        </footer>
+    </div>
+    <script src="phone.js"></script>
+</body>
+</html>

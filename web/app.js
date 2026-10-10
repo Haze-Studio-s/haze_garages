@@ -3,6 +3,7 @@ const closeBtn = document.getElementById('close-btn');
 const vehicleList = document.getElementById('vehicle-list');
 const garageTitle = document.getElementById('garage-title');
 const searchInput = document.getElementById('search-input');
+const modalContainer = document.querySelector('.modal-container');
 
 // Nickname Modal Elements
 const nicknameModal = document.getElementById('nickname-modal');
@@ -11,14 +12,21 @@ const promptPlateInfo = document.getElementById('prompt-plate-info');
 const saveNicknameBtn = document.getElementById('save-nickname-btn');
 const cancelNicknameBtn = document.getElementById('cancel-nickname-btn');
 
+// Phone Preview Elements (/garagemapp)
+const phonePreviewModal = document.getElementById('phone-preview-modal');
+const closePhoneBtn = document.getElementById('close-phone-btn');
+const phoneIframe = document.getElementById('phone-iframe');
+
 let currentMode = 'garage'; // 'garage' or 'list'
 let currentGarageId = null;
 let allVehicles = [];
 let targetPlateForNickname = null;
+let hasTransferContract = false;
 
 function closeNUI() {
     app.classList.add('hidden');
     nicknameModal.classList.add('hidden');
+    if (phonePreviewModal) phonePreviewModal.classList.add('hidden');
     fetch(`https://${GetParentResourceName()}/close`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -27,6 +35,7 @@ function closeNUI() {
 }
 
 closeBtn.addEventListener('click', closeNUI);
+if (closePhoneBtn) closePhoneBtn.addEventListener('click', closeNUI);
 
 window.addEventListener('keyup', (e) => {
     if (e.key === 'Escape') {
@@ -124,6 +133,8 @@ function renderCards(vehicles) {
         let statusText = veh.statusLabel || 'Garagem';
         if (veh.spawnType === 'street') {
             statusBadgeClass = 'status-street';
+        } else if (veh.spawnType === 'stranded') {
+            statusBadgeClass = 'status-stranded';
         } else if (veh.spawnType === 'out') {
             statusBadgeClass = 'status-out';
         } else if (veh.spawnType === 'impound') {
@@ -133,28 +144,52 @@ function renderCards(vehicles) {
         const isListMode = currentMode === 'list';
         let actionButtonHtml = '';
 
+        const transferBtnHtml = hasTransferContract ? `<button class="btn-icon btn-transfer" title="Transferir Veículo (Contrato)"><i class="fas fa-file-contract"></i></button>` : '';
+
         if (isListMode) {
             let trackBtnHtml = '';
-            if (veh.streetCoords) {
-                trackBtnHtml = `<button class="btn-icon btn-track" title="Marcar GPS"><i class="fas fa-location-dot"></i></button>`;
-            }
+            let mainActionBtnHtml = '';
 
-            let unparkBtnHtml = '';
-            if (veh.isSpawnable) {
-                unparkBtnHtml = `<button class="btn-spawn btn-unpark" data-plate="${veh.plate}"><i class="fas fa-key"></i> RETIRAR</button>`;
+            if (veh.spawnType === 'street' && veh.streetCoords) {
+                trackBtnHtml = `<button class="btn-icon btn-track" title="Marcar Localização na Rua"><i class="fas fa-location-dot"></i></button>`;
+                mainActionBtnHtml = `<button class="btn-spawn btn-unpark" data-plate="${veh.plate}"><i class="fas fa-key"></i> RETIRAR (RUA)</button>`;
+            } else if (veh.spawnType === 'stranded') {
+                trackBtnHtml = `<button class="btn-icon btn-track-garage" data-garage="${veh.garage || 'legion_square'}" title="Local da Garagem Bloqueada"><i class="fas fa-ban"></i></button>`;
+                mainActionBtnHtml = `<button class="btn-spawn btn-recover-stranded" data-plate="${veh.plate}"><i class="fas fa-truck-pickup"></i> REBOCAR P/ CENTRAL ($500)</button>`;
+            } else if (veh.spawnType === 'fixed') {
+                trackBtnHtml = `<button class="btn-icon btn-track-garage" data-garage="${veh.garage || 'legion_square'}" title="Marcar Garagem no GPS"><i class="fas fa-location-dot"></i></button>`;
+                mainActionBtnHtml = `<button class="btn-spawn btn-track-garage" data-garage="${veh.garage || 'legion_square'}"><i class="fas fa-location-dot"></i> MARCAR GARAGEM</button>`;
+            } else if (veh.spawnType === 'impound') {
+                trackBtnHtml = `<button class="btn-icon btn-track-garage" data-garage="impound_main" title="Marcar Pátio Impound no GPS"><i class="fas fa-truck-pickup"></i></button>`;
+                mainActionBtnHtml = `<button class="btn-spawn btn-track-garage" data-garage="impound_main"><i class="fas fa-truck-pickup"></i> IR AO IMPOUND</button>`;
             } else {
-                unparkBtnHtml = `<button class="btn-spawn" disabled><i class="fas fa-lock"></i> UNVAILABLE</button>`;
+                mainActionBtnHtml = `<button class="btn-spawn" disabled><i class="fas fa-car-side"></i> EM USO NA RUA</button>`;
             }
 
             actionButtonHtml = `
                 ${trackBtnHtml}
+                ${transferBtnHtml}
                 <button class="btn-icon btn-edit-nick" title="Editar Apelido"><i class="fas fa-pen"></i></button>
-                ${unparkBtnHtml}
+                ${mainActionBtnHtml}
             `;
         } else {
+            let garageActionBtn = '';
+            if (veh.isSpawnable) {
+                garageActionBtn = `<button class="btn-spawn btn-garage-spawn" data-plate="${veh.plate}"><i class="fas fa-car-side"></i> RETIRAR</button>`;
+            } else if (veh.spawnType === 'out') {
+                garageActionBtn = `<button class="btn-spawn" disabled><i class="fas fa-car-side"></i> JÁ FORA (EM USO)</button>`;
+            } else if (veh.spawnType === 'fixed_other') {
+                garageActionBtn = `<button class="btn-spawn btn-track-garage" data-garage="${veh.garage}"><i class="fas fa-location-dot"></i> OUTRA GARAGEM</button>`;
+            } else if (veh.spawnType === 'impound') {
+                garageActionBtn = `<button class="btn-spawn" disabled><i class="fas fa-lock"></i> NO IMPOUND</button>`;
+            } else {
+                garageActionBtn = `<button class="btn-spawn" disabled><i class="fas fa-lock"></i> INDISPONÍVEL</button>`;
+            }
+
             actionButtonHtml = `
+                ${transferBtnHtml}
                 <button class="btn-icon btn-edit-nick" title="Editar Apelido"><i class="fas fa-pen"></i></button>
-                <button class="btn-spawn btn-garage-spawn" data-plate="${veh.plate}"><i class="fas fa-car-side"></i> RETIRAR</button>
+                ${garageActionBtn}
             `;
         }
 
@@ -213,13 +248,54 @@ function renderCards(vehicles) {
         if (trackBtn) {
             trackBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                fetch(`https://${GetParentResourceName()}/trackVehicle`, {
+                if (veh.streetCoords) {
+                    fetch(`https://${GetParentResourceName()}/trackVehicle`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            x: veh.streetCoords.x,
+                            y: veh.streetCoords.y
+                        })
+                    });
+                }
+            });
+        }
+
+        const trackGarageBtns = card.querySelectorAll('.btn-track-garage');
+        trackGarageBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const gid = btn.getAttribute('data-garage') || veh.garage || 'legion_square';
+                fetch(`https://${GetParentResourceName()}/trackGarage`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        x: veh.streetCoords.x,
-                        y: veh.streetCoords.y
+                        garageId: gid
                     })
+                });
+            });
+        });
+
+        const recoverBtn = card.querySelector('.btn-recover-stranded');
+        if (recoverBtn) {
+            recoverBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                recoverBtn.disabled = true;
+                recoverBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> REBOCANDO...`;
+                fetch(`https://${GetParentResourceName()}/recoverStrandedVehicle`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ plate: veh.plate })
+                }).then(res => res.json()).then(resp => {
+                    if (resp && resp.ok) {
+                        closeApp();
+                    } else {
+                        recoverBtn.disabled = false;
+                        recoverBtn.innerHTML = `<i class="fas fa-truck-pickup"></i> REBOCAR P/ CENTRAL ($500)`;
+                    }
+                }).catch(() => {
+                    recoverBtn.disabled = false;
+                    recoverBtn.innerHTML = `<i class="fas fa-truck-pickup"></i> REBOCAR P/ CENTRAL ($500)`;
                 });
             });
         }
@@ -234,6 +310,20 @@ function renderCards(vehicles) {
                     body: JSON.stringify({
                         plate: veh.plate,
                         garageId: currentGarageId
+                    })
+                });
+            });
+        }
+
+        const transferBtn = card.querySelector('.btn-transfer');
+        if (transferBtn) {
+            transferBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                fetch(`https://${GetParentResourceName()}/transferVehicle`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        plate: veh.plate
                     })
                 });
             });
@@ -262,21 +352,37 @@ window.addEventListener('message', (event) => {
     if (data.action === 'openGarage') {
         currentMode = 'garage';
         currentGarageId = data.garageId;
+        hasTransferContract = !!data.hasTransferContract;
         garageTitle.innerText = data.title || 'Haze Garages';
         searchInput.value = '';
         allVehicles = data.vehicles || [];
         renderCards(allVehicles);
+        if (modalContainer) modalContainer.classList.remove('hidden');
+        if (phonePreviewModal) phonePreviewModal.classList.add('hidden');
         app.classList.remove('hidden');
     } else if (data.action === 'openVehicleList') {
         currentMode = 'list';
         currentGarageId = null;
+        hasTransferContract = !!data.hasTransferContract;
         garageTitle.innerText = data.title || '🚗 Meus Veículos';
         searchInput.value = '';
         allVehicles = data.vehicles || [];
         renderCards(allVehicles);
+        if (modalContainer) modalContainer.classList.remove('hidden');
+        if (phonePreviewModal) phonePreviewModal.classList.add('hidden');
+        app.classList.remove('hidden');
+    } else if (data.action === 'openPhoneNUI') {
+        if (modalContainer) modalContainer.classList.add('hidden');
+        if (phonePreviewModal) {
+            phonePreviewModal.classList.remove('hidden');
+            if (phoneIframe && phoneIframe.contentWindow) {
+                phoneIframe.contentWindow.postMessage({ action: 'refreshPhoneVehicles' }, '*');
+            }
+        }
         app.classList.remove('hidden');
     } else if (data.action === 'closeGarage') {
         app.classList.add('hidden');
         nicknameModal.classList.add('hidden');
+        if (phonePreviewModal) phonePreviewModal.classList.add('hidden');
     }
 });

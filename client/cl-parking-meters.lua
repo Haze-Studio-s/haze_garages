@@ -208,6 +208,31 @@ AddEventHandler("haze_garages:client:init", function()
                         Haze.Client.Notify(msg or "Erro ao aplicar multa.", "error")
                     end
                 end
+            },
+            {
+                name = "haze_police_impound_vehicle",
+                icon = "fas fa-truck-pickup",
+                label = "Apreender Veículo (Impound)",
+                groups = Config.PoliceJobs or { "police", "sheriff" },
+                onSelect = function(data)
+                    local rawPlate = GetVehicleNumberPlateText(data.entity)
+                    local plate = Haze.Shared.CleanPlate(rawPlate)
+                    local input = lib.inputDialog("Apreensão de Veículo - " .. plate, {
+                        { type = 'number', label = 'Valor da Multa ($)', default = 500, min = 0 },
+                        { type = 'number', label = 'Tempo de Retenção (minutos)', default = 0, min = 0 },
+                        { type = 'input', label = 'Motivo da Apreensão', default = 'Infração de Trânsito / Estacionamento Irregular' }
+                    })
+                    if not input then return end
+                    local fine = tonumber(input[1]) or 500
+                    local duration = tonumber(input[2]) or 0
+                    local reason = input[3] or "Infração Policial"
+                    local success, res = lib.callback.await("haze_garages:server:impoundVehicle", false, plate, fine, reason, duration, "impound_main")
+                    if success then
+                        Haze.Client.Notify(string.format("Veículo [%s] apreendido e enviado ao Pátio com sucesso!", plate), "success")
+                    else
+                        Haze.Client.Notify(res or "Erro ao apreender veículo.", "error")
+                    end
+                end
             }
         })
     end
