@@ -310,7 +310,7 @@ O sistema conta com um assistente guiado completo para criar e gerenciar garagen
    - O manobrista abre a porta, sai do veículo e caminha diretamente até você na calçada.
    - Ao se aproximar a 1.8 metros, ele se posiciona de frente para você e toca a animação de entrega de chaves com prop nativo de chaves na mão (`mp_common:givetake2_a`).
    - Notificação em tela: *"Aqui estão as chaves do seu veículo, senhor! Tenha uma excelente viagem."*
-   - As chaves são sincronizadas automaticamente com o `qbx_vehiclekeys`.
+   - As chaves são sincronizadas automaticamente com o `haze_carkeys`.
    - O manobrista despede-se e vai embora a pé tranquilamente pela calçada (`TaskWanderStandard`).
 
 ---

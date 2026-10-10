@@ -246,7 +246,11 @@ function Haze.Server.GiveKey(src, plate, netId)
     if netId then
         local veh = NetworkGetEntityFromNetworkId(netId)
         if DoesEntityExist(veh) then
-            if GetResourceState('qbx_vehiclekeys') == 'started' then
+            if GetResourceState('haze_carkeys') == 'started' then
+                pcall(function()
+                    exports.haze_carkeys:GiveKeys(src, veh)
+                end)
+            elseif GetResourceState('qbx_vehiclekeys') == 'started' then
                 pcall(function()
                     exports.qbx_vehiclekeys:GiveKeys(src, veh)
                 end)
@@ -254,7 +258,11 @@ function Haze.Server.GiveKey(src, plate, netId)
         end
     end
 
-    if GetResourceState('qbx_vehiclekeys') == 'started' then
+    if GetResourceState('haze_carkeys') == 'started' then
+        pcall(function()
+            TriggerClientEvent('qb-vehiclekeys:client:AddKeys', src, cleanPlate)
+        end)
+    elseif GetResourceState('qbx_vehiclekeys') == 'started' then
         pcall(function()
             TriggerClientEvent('qb-vehiclekeys:client:AddKeys', src, cleanPlate)
         end)
@@ -266,7 +274,11 @@ end
 function Haze.Server.RemoveKey(src, plate)
     src = tonumber(src)
     local cleanPlate = Haze.Shared.CleanPlate(plate)
-    if GetResourceState('qbx_vehiclekeys') == 'started' then
+    if GetResourceState('haze_carkeys') == 'started' then
+        pcall(function()
+            exports.haze_carkeys:RemoveKeys(src, cleanPlate)
+        end)
+    elseif GetResourceState('qbx_vehiclekeys') == 'started' then
         pcall(function()
             exports.qbx_vehiclekeys:RemoveKeys(src, cleanPlate)
         end)

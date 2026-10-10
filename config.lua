@@ -7,7 +7,7 @@ Config.Currency = "$"
 -- Framework & Integrações
 Config.Framework = "auto" -- "auto" (detecta qbx_core, qb-core ou ESX)
 Config.FuelSystem = "auto" -- "ox_fuel", "LegacyFuel", "ps-fuel", "none"
-Config.VehicleKeys = "auto" -- "qbx_vehiclekeys", "qb-vehiclekeys", "none"
+Config.VehicleKeys = "auto" -- "haze_carkeys", "qbx_vehiclekeys", "qb-vehiclekeys", "none"
 Config.EnableGranollaMechanic = true -- Integração com granolla_mechanic (desgaste de peças)
 Config.EnableDVNearestGarage = true -- Enviar veículo próprio para a garagem mais próxima ao dar /dv
 Config.DVCommandRestricted = false -- Restrição do comando /dv (false para todos, ou 'group.admin')
