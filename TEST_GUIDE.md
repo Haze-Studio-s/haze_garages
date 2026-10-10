@@ -277,6 +277,12 @@ O sistema conta com um assistente guiado completo para criar e gerenciar garagen
      - **Teleportar até a Garagem**: Leva o admin até as coordenadas do atendente NPC.
      - **Excluir Garagem**: Remove a garagem do arquivo `data/garages.json` e a desativa em tempo real com confirmação.
 
+4. **Teste de Hot-Reload em Tempo Real (Zero Restart)**:
+   - Crie uma garagem com `/criargaragem` ou exclua uma com `/gerenciargaragens`.
+   - Observe o console F8 do cliente: `[Haze Garages] Hot-reload executado com sucesso: X garagens ativas sem restart.`
+   - Todos os peds antigos, pontos de lib e blips são limpos de forma atômica (`removeLocalEntity`, `pt:remove()`, `RemoveBlip()`).
+   - A nova malha de entidades e zonas é reconstruída instantaneamente sem nenhum restart no servidor e mantendo o resmon constante em 0.00ms.
+
 ---
 
 ## 🔍 Resumo de Comandos Rápidos para Testes

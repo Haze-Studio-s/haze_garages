@@ -3,7 +3,7 @@
     "label": "Garagem Central - Praça Legion",
     "type": "public",
     "category": "car",
-    "coords": { "x": 215.12, "y": -810.55, "z": 30.7, "w": 140.0 },
+    "coords": { "x": 215.12, "y": -810.55, "z": 30.7, "w": 320.0 },
     "dropZone": {
       "points": [
         { "x": 210.5, "y": -792.0, "z": 30.6 },
@@ -27,7 +27,7 @@
     "label": "Heliponto Hospital Pillbox",
     "type": "public",
     "category": "plane",
-    "coords": { "x": 352.1, "y": -588.2, "z": 74.16, "w": 70.0 },
+    "coords": { "x": 352.1, "y": -588.2, "z": 74.16, "w": 250.0 },
     "dropZone": {
       "points": [
         { "x": 343.0, "y": -580.0, "z": 74.16 },
@@ -49,7 +49,7 @@
     "label": "Marina de Los Santos",
     "type": "public",
     "category": "boat",
-    "coords": { "x": -735.4, "y": -1320.1, "z": 1.6, "w": 180.0 },
+    "coords": { "x": -735.4, "y": -1320.1, "z": 1.6, "w": 0.0 },
     "dropZone": {
       "points": [
         { "x": -716.0, "y": -1320.0, "z": 0.5 },
@@ -73,7 +73,7 @@
     "type": "job",
     "job": "police",
     "category": "car",
-    "coords": { "x": 441.1, "y": -981.2, "z": 30.6, "w": 90.0 },
+    "coords": { "x": 441.1, "y": -981.2, "z": 30.6, "w": 270.0 },
     "dropZone": {
       "points": [
         { "x": 435.0, "y": -988.0, "z": 30.6 },
@@ -98,7 +98,7 @@
     "type": "gang",
     "gang": "vagos",
     "category": "car",
-    "coords": { "x": 335.5, "y": -2012.3, "z": 20.8, "w": 45.0 },
+    "coords": { "x": 335.5, "y": -2012.3, "z": 20.8, "w": 225.0 },
     "dropZone": {
       "points": [
         { "x": 332.0, "y": -2004.0, "z": 20.8 },
@@ -121,7 +121,7 @@
     "label": "Pátio de Apreensão Policial (Impound)",
     "type": "impound",
     "category": "car",
-    "coords": { "x": 409.12, "y": -1623.55, "z": 29.3, "w": 230.0 },
+    "coords": { "x": 409.12, "y": -1623.55, "z": 29.3, "w": 50.0 },
     "dropZone": {
       "points": [
         { "x": 393.0, "y": -1622.0, "z": 29.3 },

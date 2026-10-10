@@ -48,10 +48,31 @@ end
 local function cleanupGaragePeds()
     for _, ped in ipairs(spawnedGaragePeds) do
         if DoesEntityExist(ped) then
+            if exports.ox_target then
+                pcall(function()
+                    exports.ox_target:removeLocalEntity(ped)
+                end)
+            end
             DeleteEntity(ped)
         end
     end
     spawnedGaragePeds = {}
+end
+
+local function cleanupGaragePoints()
+    for _, pt in ipairs(garagePoints) do
+        if pt and pt.remove then
+            pcall(function() pt:remove() end)
+        end
+    end
+    garagePoints = {}
+end
+
+local function cleanupGarageBlips()
+    for _, blip in pairs(garageBlips) do
+        if DoesBlipExist(blip) then RemoveBlip(blip) end
+    end
+    garageBlips = {}
 end
 
 local function canAccessGarageClient(garageData)
@@ -67,13 +88,10 @@ local function canAccessGarageClient(garageData)
 end
 
 local function refreshGarageBlips()
-    for _, blip in pairs(garageBlips) do
-        if DoesBlipExist(blip) then RemoveBlip(blip) end
-    end
-    garageBlips = {}
+    cleanupGarageBlips()
 
     for garageId, gData in pairs(Config.FixedGarages or {}) do
-        if canAccessGarageClient(gData) then
+        if canAccessGarageClient(gData) and gData.coords then
             local bCfg = gData.blip or { sprite = 357, color = 3, scale = 0.75 }
             local blip = AddBlipForCoord(gData.coords.x, gData.coords.y, gData.coords.z)
             SetBlipSprite(blip, bCfg.sprite or 357)
@@ -339,123 +357,126 @@ end)
 AddEventHandler("onResourceStop", function(resourceName)
     if GetCurrentResourceName() == resourceName then
         cleanupGaragePeds()
-        for _, blip in pairs(garageBlips) do
-            if DoesBlipExist(blip) then RemoveBlip(blip) end
-        end
-        garageBlips = {}
-        for _, pt in ipairs(garagePoints) do
-            pt:remove()
-        end
-        garagePoints = {}
+        cleanupGarageBlips()
+        cleanupGaragePoints()
     end
 end)
 
 local function initGaragesMesh()
     cleanupGaragePeds()
+    cleanupGarageBlips()
+    cleanupGaragePoints()
     refreshGarageBlips()
 
-    for _, pt in ipairs(garagePoints) do
-        pt:remove()
+    if lib.isTextUIOpen and lib.isTextUIOpen() then
+        lib.hideTextUI()
     end
-    garagePoints = {}
 
     for garageId, garageData in pairs(Config.FixedGarages or {}) do
-        local pedModel = garageData.pedModel or Config.GaragePedModel or "a_m_y_business_01"
-        local pedHash = Haze.Shared.GetModelHash(pedModel)
+        if garageData.coords then
+            local pedModel = garageData.pedModel or Config.GaragePedModel or "a_m_y_business_01"
+            local pedHash = Haze.Shared.GetModelHash(pedModel)
 
-        if pedHash and Haze.Client.RequestModel(pedHash) then
-            local heading = ((garageData.coords.w or 0.0) + 180.0) % 360.0
-            local ped = CreatePed(4, pedHash, garageData.coords.x, garageData.coords.y, garageData.coords.z - 1.0, heading, false, false)
-            SetEntityHeading(ped, heading)
-            FreezeEntityPosition(ped, true)
-            SetEntityInvincible(ped, true)
-            SetBlockingOfNonTemporaryEvents(ped, true)
-            SetPedDiesWhenInjured(ped, false)
-            SetPedCanPlayAmbientAnims(ped, true)
-            SetPedCanRagdollFromPlayerImpact(ped, false)
+            if pedHash and Haze.Client.RequestModel(pedHash) then
+                local heading = tonumber(garageData.coords.w) or 0.0
+                local ped = CreatePed(4, pedHash, garageData.coords.x, garageData.coords.y, garageData.coords.z - 1.0, heading, false, false)
+                SetEntityHeading(ped, heading)
+                FreezeEntityPosition(ped, true)
+                SetEntityInvincible(ped, true)
+                SetBlockingOfNonTemporaryEvents(ped, true)
+                SetPedDiesWhenInjured(ped, false)
+                SetPedCanPlayAmbientAnims(ped, true)
+                SetPedCanRagdollFromPlayerImpact(ped, false)
+                SetModelAsNoLongerNeeded(pedHash)
 
-            spawnedGaragePeds[#spawnedGaragePeds + 1] = ped
+                spawnedGaragePeds[#spawnedGaragePeds + 1] = ped
 
-            if exports.ox_target then
-                exports.ox_target:addLocalEntity(ped, {
-                    {
-                        name = "haze_garage_open_" .. garageId,
-                        icon = "fas fa-warehouse",
-                        label = garageData.label,
-                        onSelect = function()
-                            TriggerEvent("haze_garages:client:openGarageMenu", garageId)
-                        end
-                    },
-                    {
-                        name = "haze_garage_store_" .. garageId,
-                        icon = "fas fa-arrow-down",
-                        label = "Guardar Veículo (Vaga de Devolução)",
-                        onSelect = function()
-                            local veh = getVehicleInGarageDropZone(garageId)
-                            if veh then
-                                storeVehicleAtGarage(garageId, veh)
-                            else
-                                Haze.Client.Notify("Nenhum veículo seu foi encontrado na vaga de devolução desta garagem. Estacione o veículo na área demarcada para guardá-lo.", "error")
+                if exports.ox_target then
+                    exports.ox_target:addLocalEntity(ped, {
+                        {
+                            name = "haze_garage_open_" .. garageId,
+                            icon = "fas fa-warehouse",
+                            label = garageData.label,
+                            onSelect = function()
+                                TriggerEvent("haze_garages:client:openGarageMenu", garageId)
+                            end
+                        },
+                        {
+                            name = "haze_garage_store_" .. garageId,
+                            icon = "fas fa-arrow-down",
+                            label = "Guardar Veículo (Vaga de Devolução)",
+                            onSelect = function()
+                                local veh = getVehicleInGarageDropZone(garageId)
+                                if veh then
+                                    storeVehicleAtGarage(garageId, veh)
+                                else
+                                    Haze.Client.Notify("Nenhum veículo seu foi encontrado na vaga de devolução desta garagem. Estacione o veículo na área demarcada para guardá-lo.", "error")
+                                end
+                            end
+                        }
+                    })
+                else
+                    local pt = lib.points.new({
+                        coords = vec3(garageData.coords.x, garageData.coords.y, garageData.coords.z),
+                        distance = 4.0,
+                        onEnter = function()
+                            lib.showTextUI(Locale.garage_open_prompt)
+                        end,
+                        onLeave = function()
+                            lib.hideTextUI()
+                        end,
+                        nearby = function()
+                            if IsControlJustReleased(0, 38) then -- Key E
+                                TriggerEvent("haze_garages:client:openGarageMenu", garageId)
                             end
                         end
-                    }
-                })
-            else
-                local pt = lib.points.new({
-                    coords = vec3(garageData.coords.x, garageData.coords.y, garageData.coords.z),
-                    distance = 4.0,
-                    onEnter = function()
-                        lib.showTextUI(Locale.garage_open_prompt)
-                    end,
-                    onLeave = function()
-                        lib.hideTextUI()
-                    end,
-                    nearby = function()
-                        if IsControlJustReleased(0, 38) then -- Key E
-                            TriggerEvent("haze_garages:client:openGarageMenu", garageId)
-                        end
-                    end
-                })
-                garagePoints[#garagePoints + 1] = pt
-            end
+                    })
+                    garagePoints[#garagePoints + 1] = pt
+                end
 
-            -- Ponto demarcado para guardar veículo (Drop-off Zone de 4 Pontos ou Raio)
-            local dz = garageData.dropZone
-            if dz then
-                local isPoly = dz.points and #dz.points >= 3
-                local center = isPoly and getPolygonCenter(dz.points) or (dz.coords or vec3(garageData.coords.x, garageData.coords.y, garageData.coords.z))
-                local maxRadius = isPoly and getPolygonMaxRadius(center, dz.points) or (dz.radius or 6.0)
-                local isPromptShown = false
+                -- Ponto demarcado para guardar veículo (Drop-off Zone de 4 Pontos ou Raio)
+                local dz = garageData.dropZone
+                if dz then
+                    local isPoly = dz.points and #dz.points >= 3
+                    local center = isPoly and getPolygonCenter(dz.points) or (dz.coords or vec3(garageData.coords.x, garageData.coords.y, garageData.coords.z))
+                    local maxRadius = isPoly and getPolygonMaxRadius(center, dz.points) or (dz.radius or 6.0)
+                    local isPromptShown = false
 
-                local drivePt = lib.points.new({
-                    coords = center,
-                    distance = maxRadius + 4.0,
-                    onLeave = function()
-                        if isPromptShown then
-                            lib.hideTextUI()
-                            isPromptShown = false
-                        end
-                    end,
-                    nearby = function(self)
-                        -- Detecta se o jogador no veículo está dentro da área fechada pelos 4 pontos
-                        local ped = cache.ped or PlayerPedId()
-                        if IsPedInAnyVehicle(ped, false) and GetPedInVehicleSeat(GetVehiclePedIsIn(ped, false), -1) == ped then
-                            local currentVeh = GetVehiclePedIsIn(ped, false)
-                            local vehCoords = GetEntityCoords(currentVeh)
-                            local isInside = isCoordsInDropZone(vehCoords, dz)
+                    local drivePt = lib.points.new({
+                        coords = center,
+                        distance = maxRadius + 4.0,
+                        onLeave = function()
+                            if isPromptShown then
+                                lib.hideTextUI()
+                                isPromptShown = false
+                            end
+                        end,
+                        nearby = function(self)
+                            -- Detecta se o jogador no veículo está dentro da área fechada pelos 4 pontos
+                            local ped = cache.ped or PlayerPedId()
+                            if IsPedInAnyVehicle(ped, false) and GetPedInVehicleSeat(GetVehiclePedIsIn(ped, false), -1) == ped then
+                                local currentVeh = GetVehiclePedIsIn(ped, false)
+                                local vehCoords = GetEntityCoords(currentVeh)
+                                local isInside = isCoordsInDropZone(vehCoords, dz)
 
-                            if isInside then
-                                if not isPromptShown then
-                                    lib.showTextUI("[E] Guardar Veículo na " .. (garageData.label or garageId))
-                                    isPromptShown = true
-                                end
+                                if isInside then
+                                    if not isPromptShown then
+                                        lib.showTextUI("[E] Guardar Veículo na " .. (garageData.label or garageId))
+                                        isPromptShown = true
+                                    end
 
-                                if IsControlJustReleased(0, 38) then -- Key E
+                                    if IsControlJustReleased(0, 38) then -- Key E
+                                        if isPromptShown then
+                                            lib.hideTextUI()
+                                            isPromptShown = false
+                                        end
+                                        storeVehicleAtGarage(garageId, currentVeh)
+                                    end
+                                else
                                     if isPromptShown then
                                         lib.hideTextUI()
                                         isPromptShown = false
                                     end
-                                    storeVehicleAtGarage(garageId, currentVeh)
                                 end
                             else
                                 if isPromptShown then
@@ -463,15 +484,10 @@ local function initGaragesMesh()
                                     isPromptShown = false
                                 end
                             end
-                        else
-                            if isPromptShown then
-                                lib.hideTextUI()
-                                isPromptShown = false
-                            end
                         end
-                    end
-                })
-                garagePoints[#garagePoints + 1] = drivePt
+                    })
+                    garagePoints[#garagePoints + 1] = drivePt
+                end
             end
         end
     end
@@ -490,11 +506,15 @@ AddEventHandler("haze_garages:client:init", function()
     end)
 end)
 
--- Evento de hot-reload em tempo real quando garagens são criadas/editadas/excluídas
+-- Evento de hot-reload em tempo real quando garagens são criadas/editadas/excluídas (Zero Restart)
 RegisterNetEvent("haze_garages:client:syncGarages", function(serverGarages)
     if serverGarages and type(serverGarages) == "table" then
         Config.FixedGarages = normalizeGaragesTable(serverGarages)
         initGaragesMesh()
+
+        local activeCount = 0
+        for _ in pairs(Config.FixedGarages) do activeCount = activeCount + 1 end
+        print(string.format("^2[Haze Garages]^7 Hot-reload executado com sucesso: %d garagens ativas sem restart.^7", activeCount))
     end
 end)
 
@@ -890,8 +910,11 @@ RegisterCommand("guardar", function()
     local minDistance = 999999.0
 
     for gId, gData in pairs(Config.FixedGarages or {}) do
-        if canAccessGarageClient(gData) then
-            local dist = #(vec3(vehCoords.x, vehCoords.y, vehCoords.z) - vec3(gData.coords.x, gData.coords.y, gData.coords.z))
+        if canAccessGarageClient(gData) and gData.coords then
+            local npcDist = #(vec3(vehCoords.x, vehCoords.y, vehCoords.z) - vec3(gData.coords.x, gData.coords.y, gData.coords.z))
+            local dzCenter = (gData.dropZone and gData.dropZone.points and #gData.dropZone.points >= 3) and getPolygonCenter(gData.dropZone.points) or vec3(gData.coords.x, gData.coords.y, gData.coords.z)
+            local dzDist = #(vec3(vehCoords.x, vehCoords.y, vehCoords.z) - dzCenter)
+            local dist = math.min(npcDist, dzDist)
             if dist < minDistance then
                 minDistance = dist
                 nearestGarageId = gId
