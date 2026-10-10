@@ -122,6 +122,7 @@ function renderVehicles(vehicles) {
                 <button class="action-btn btn-valet" data-plate="${veh.plate}">
                     <i class="fas fa-key"></i> Valet
                 </button>
+                ${veh.isOwner !== false ? `<button class="action-btn btn-coowner" data-plate="${veh.plate}" title="Gerenciar Condutor Autorizado ($1.000)"><i class="fas fa-user-friends"></i> Condutor</button>` : ''}
             </div>
         `;
 
@@ -136,6 +137,13 @@ function renderVehicles(vehicles) {
         if (valetBtn) {
             valetBtn.addEventListener('click', () => {
                 fetchNui('valetPhoneVehicle', { plate: veh.plate });
+            });
+        }
+
+        const coownerBtn = card.querySelector('.btn-coowner');
+        if (coownerBtn) {
+            coownerBtn.addEventListener('click', () => {
+                fetchNui('openCoOwnerManager', { plate: veh.plate });
             });
         }
 

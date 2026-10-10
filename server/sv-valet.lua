@@ -43,15 +43,17 @@ lib.callback.register("haze_garages:server:getValetVehicles", function(source)
 
     local query = [[
         SELECT pv.plate, pv.vehicle, pv.model, pv.garage, pv.state, pv.mods,
-               hvn.nickname
+               hvn.nickname, hco.coowner_citizenid
         FROM player_vehicles pv
         LEFT JOIN haze_vehicle_nicknames hvn ON hvn.plate = pv.plate
+        LEFT JOIN haze_vehicle_coowners hco ON hco.plate = pv.plate
         WHERE ((pv.citizenid IS NOT NULL AND pv.citizenid = ?)
-           OR (pv.license IS NOT NULL AND pv.license = ?))
+           OR (pv.license IS NOT NULL AND pv.license = ?)
+           OR (hco.coowner_citizenid IS NOT NULL AND hco.coowner_citizenid = ?))
           AND pv.state = 1
     ]]
 
-    local rows = MySQL.query.await(query, { citizenid, citizenid })
+    local rows = MySQL.query.await(query, { citizenid, citizenid, citizenid })
     local list = {}
 
     for _, row in ipairs(rows or {}) do
@@ -95,12 +97,18 @@ lib.callback.register("haze_garages:server:requestValet", function(source, plate
     end
 
     local vehRow = MySQL.single.await([[
-        SELECT * FROM player_vehicles 
-        WHERE plate = ? AND (citizenid = ? OR license = ?)
-    ]], { cleanPlate, citizenid, citizenid })
+        SELECT pv.*, hco.coowner_citizenid 
+        FROM player_vehicles pv
+        LEFT JOIN haze_vehicle_coowners hco ON hco.plate = pv.plate
+        WHERE pv.plate = ? AND (
+            (pv.citizenid IS NOT NULL AND pv.citizenid = ?)
+         OR (pv.license IS NOT NULL AND pv.license = ?)
+         OR (hco.coowner_citizenid IS NOT NULL AND hco.coowner_citizenid = ?)
+        )
+    ]], { cleanPlate, citizenid, citizenid, citizenid })
 
     if not vehRow then
-        return false, Locale.not_vehicle_owner or "Você não possui os documentos deste veículo."
+        return false, Locale.not_vehicle_owner or "Você não possui os documentos ou autorização deste veículo."
     end
 
     -- Validações do estado do veículo

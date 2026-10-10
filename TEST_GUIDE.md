@@ -347,10 +347,33 @@ O sistema conta com um assistente guiado completo para criar e gerenciar garagen
 
 ---
 
+### 🔹 Teste 17: Sistema de Coproprietário / Condutor Autorizado (Fase 3)
+1. **Cadastro de Condutor Autorizado ($1.000)**:
+   - Abra o menu da garagem física (`/listarveiculos` ou no atendente) ou o App do Celular (`/garagemapp`).
+   - No card de qualquer veículo de sua propriedade exclusiva, observe o novo botão com ícone de amigos: **`👥 Condutor`** ou **`👥 Gerenciar Condutor`**.
+   - Ou digite `/condutor [PLACA]` (ou estando dentro do veículo, apenas `/condutor`).
+   - Um diálogo `ox_lib.inputDialog` solicita o ID do jogador (Server ID ou CitizenID).
+   - Ao confirmar: A taxa única de serviço de **$1.000** é debitada da sua conta bancária (`bank` ou `cash`), e o jogador recebe notificação imediata em tempo real informando que agora é condutor autorizado do veículo.
+2. **Limite Estrito de 1 Condutor por Veículo**:
+   - Tente adicionar um segundo condutor ao mesmo veículo: O sistema bloqueia informando que o veículo já possui um condutor autorizado cadastrado e orienta a revogar o atual primeiro.
+3. **Acesso Total com Proprietário Offline**:
+   - Desconecte o personagem proprietário (ou teste com o CitizenID dele).
+   - O condutor autorizado vai até qualquer garagem pública onde o veículo esteja guardado, ou abre o App do Celular:
+     - O veículo aparece na lista do condutor com o selo azul **`[AUTORIZADO]`**.
+     - O condutor pode clicar em **`RETIRAR`** na garagem, dirigir normalmente e guardar de volta na garagem (`/guardar`).
+     - O condutor pode solicitar **Valet** pelo celular para o carro ser entregue a ele!
+4. **Revogação de Permissão (Gratuita)**:
+   - O proprietário legítimo clica no botão de condutor ou executa `/condutor [PLACA]`.
+   - Um diálogo exibe o nome e CitizenID do condutor ativo, com o botão **`❌ Revogar Autorização`**.
+   - Ao confirmar, o vínculo é excluído imediatamente do banco de dados sem custo adicional.
+
+---
+
 ## 🔍 Resumo de Comandos Rápidos para Testes
 
 | Comando | Parâmetros | Descrição |
 | :--- | :--- | :--- |
+| `/condutor` | `[placa]` (opcional) | Gerencia o condutor autorizado/coproprietário do veículo ($1.000) |
 | `/livrodebordo` | `[garageId]` (opcional) | Abre o Livro de Bordo corporativo com histórico de uso, condutores e avarias |
 | `/valet` | `[placa]` (opcional) | Solicita manobrista NPC para trazer seu veículo da garagem pública mais próxima |
 | `/listarveiculos` | Nenhum | Abre o menu geral de veículos |

@@ -44,21 +44,29 @@ lib.callback.register("haze_garages:server:getUserVehicles", function(source, ga
                hsp.coords AS street_coords,
                hsd.deformation, 
                hsd.mechanical_damage, 
-               hvn.nickname
+               hvn.nickname,
+               hco.coowner_citizenid,
+               hco.coowner_name,
+               hco.owner_citizenid AS real_owner
         FROM player_vehicles pv
         LEFT JOIN haze_street_parking hsp ON hsp.plate = pv.plate
         LEFT JOIN haze_vehicle_deformations hsd ON hsd.plate = pv.plate
         LEFT JOIN haze_vehicle_nicknames hvn ON hvn.plate = pv.plate
+        LEFT JOIN haze_vehicle_coowners hco ON hco.plate = pv.plate
         WHERE ((pv.citizenid IS NOT NULL AND pv.citizenid = ?)
-           OR (pv.license IS NOT NULL AND pv.license = ?))
+           OR (pv.license IS NOT NULL AND pv.license = ?)
+           OR (hco.coowner_citizenid IS NOT NULL AND hco.coowner_citizenid = ?))
     ]]
 
-    local rows = MySQL.query.await(query, { citizenid or "NONE", citizenid or "NONE" })
+    local rows = MySQL.query.await(query, { citizenid or "NONE", citizenid or "NONE", citizenid or "NONE" })
     local vehicles = {}
 
     for _, row in ipairs(rows or {}) do
         local mods = row.mods and json.decode(row.mods) or {}
         local streetCoords = row.street_coords and json.decode(row.street_coords) or nil
+
+        local isCoOwner = (row.coowner_citizenid ~= nil and row.coowner_citizenid == citizenid)
+        local isOwner = not isCoOwner
 
         local statusLabel = "Desconhecido"
         local isSpawnable = false
@@ -78,6 +86,10 @@ lib.callback.register("haze_garages:server:getUserVehicles", function(source, ga
                     statusLabel = statusLabel,
                     isSpawnable = isSpawnable,
                     spawnType = spawnType,
+                    isCoOwner = isCoOwner,
+                    isOwner = isOwner,
+                    coownerName = row.coowner_name or "",
+                    hasCoOwner = (row.coowner_citizenid ~= nil),
                     mods = mods,
                     engine = mods.engineHealth or 1000,
                     body = mods.bodyHealth or 1000,
@@ -100,12 +112,13 @@ lib.callback.register("haze_garages:server:getUserVehicles", function(source, ga
                 spawnType = "street"
             elseif row.state == 1 then
                 if row.garage == garageId or garageData.type == "public" or not row.garage then
-                    statusLabel = "Guardado nesta Garagem"
+                    statusLabel = isCoOwner and "Guardado [Autorizado]" or "Guardado nesta Garagem"
                     isSpawnable = true
                     spawnType = "fixed"
                 else
                     local otherGarage = Config.FixedGarages[row.garage]
-                    statusLabel = "Guardado em: " .. (otherGarage and otherGarage.label or row.garage)
+                    local otherLabel = otherGarage and otherGarage.label or row.garage
+                    statusLabel = isCoOwner and ("Em: " .. otherLabel .. " [Autorizado]") or ("Guardado em: " .. otherLabel)
                     isSpawnable = false
                     spawnType = "fixed_other"
                 end
@@ -120,6 +133,10 @@ lib.callback.register("haze_garages:server:getUserVehicles", function(source, ga
                 statusLabel = statusLabel,
                 isSpawnable = isSpawnable,
                 spawnType = spawnType,
+                isCoOwner = isCoOwner,
+                isOwner = isOwner,
+                coownerName = row.coowner_name or "",
+                hasCoOwner = (row.coowner_citizenid ~= nil),
                 streetCoords = streetCoords,
                 mods = mods,
                 engine = mods.engineHealth or 1000,
@@ -249,8 +266,17 @@ lib.callback.register("haze_garages:server:spawnVehicle", function(source, plate
         }
     end
 
-    -- 2. Veículo Particular / Normal salvo no banco
-    local vehRow = MySQL.single.await("SELECT * FROM player_vehicles WHERE plate = ? AND (citizenid = ? OR license = ?)", { cleanPlate, citizenid, citizenid })
+    -- 2. Veículo Particular / Normal salvo no banco (Dono ou Condutor Autorizado)
+    local vehRow = MySQL.single.await([[
+        SELECT pv.*, hco.coowner_citizenid, hco.coowner_name
+        FROM player_vehicles pv
+        LEFT JOIN haze_vehicle_coowners hco ON hco.plate = pv.plate
+        WHERE pv.plate = ? AND (
+            (pv.citizenid IS NOT NULL AND pv.citizenid = ?)
+         OR (pv.license IS NOT NULL AND pv.license = ?)
+         OR (hco.coowner_citizenid IS NOT NULL AND hco.coowner_citizenid = ?)
+        )
+    ]], { cleanPlate, citizenid, citizenid, citizenid })
     if not vehRow then
         releaseSpawnReservation(src, cleanPlate)
         return false, Locale.not_vehicle_owner
@@ -357,8 +383,16 @@ lib.callback.register("haze_garages:server:storeVehicle", function(source, plate
     end
 
     if not isCorporateFleet then
-        local isOwner = MySQL.scalar.await("SELECT 1 FROM player_vehicles WHERE plate = ? AND (citizenid = ? OR license = ?)", { cleanPlate, citizenid, citizenid })
-        if not isOwner then
+        local hasAccess = MySQL.scalar.await([[
+            SELECT 1 FROM player_vehicles pv
+            LEFT JOIN haze_vehicle_coowners hco ON hco.plate = pv.plate
+            WHERE pv.plate = ? AND (
+                (pv.citizenid IS NOT NULL AND pv.citizenid = ?)
+             OR (pv.license IS NOT NULL AND pv.license = ?)
+             OR (hco.coowner_citizenid IS NOT NULL AND hco.coowner_citizenid = ?)
+            )
+        ]], { cleanPlate, citizenid, citizenid, citizenid })
+        if not hasAccess then
             return false, Locale.not_vehicle_owner
         end
 

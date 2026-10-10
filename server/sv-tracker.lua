@@ -161,21 +161,28 @@ lib.callback.register("haze_garages:server:getPhoneVehicles", function(source)
                gvw.mileage,
                hvn.nickname,
                hvt.installed_by AS tracker_installed_by,
-               (hvt.jammed_until IS NOT NULL AND hvt.jammed_until > NOW()) AS is_jammed
+               (hvt.jammed_until IS NOT NULL AND hvt.jammed_until > NOW()) AS is_jammed,
+               hco.coowner_citizenid,
+               hco.coowner_name
         FROM player_vehicles pv
         LEFT JOIN haze_street_parking hsp ON hsp.plate = pv.plate
         LEFT JOIN haze_vehicle_deformations hsd ON hsd.plate = pv.plate
         LEFT JOIN granolla_vehicle_wear gvw ON gvw.plate = pv.plate
         LEFT JOIN haze_vehicle_nicknames hvn ON hvn.plate = pv.plate
         LEFT JOIN haze_vehicle_trackers hvt ON hvt.plate = pv.plate
+        LEFT JOIN haze_vehicle_coowners hco ON hco.plate = pv.plate
         WHERE (pv.citizenid IS NOT NULL AND pv.citizenid = ?)
            OR (pv.license IS NOT NULL AND pv.license = ?)
-    ]], { citizenid or "NONE", citizenid or "NONE" })
+           OR (hco.coowner_citizenid IS NOT NULL AND hco.coowner_citizenid = ?)
+    ]], { citizenid or "NONE", citizenid or "NONE", citizenid or "NONE" })
 
     local vehicles = {}
     for _, row in ipairs(pvRows or {}) do
         local mods = row.mods and json.decode(row.mods) or {}
         local streetCoords = row.street_coords and json.decode(row.street_coords) or nil
+
+        local isCoOwner = (row.coowner_citizenid ~= nil and row.coowner_citizenid == citizenid)
+        local isOwner = not isCoOwner
 
         local statusLabel = "Fora da Garagem"
         local isSpawnable = false
@@ -205,6 +212,10 @@ lib.callback.register("haze_garages:server:getPhoneVehicles", function(source)
             spawnType = "out"
         end
 
+        if isCoOwner then
+            statusLabel = statusLabel .. " [Autorizado]"
+        end
+
         table.insert(vehicles, {
             plate = row.plate,
             model = string.upper(row.street_model or row.vehicle or row.model or "VEICULO"),
@@ -214,6 +225,10 @@ lib.callback.register("haze_garages:server:getPhoneVehicles", function(source)
             statusLabel = statusLabel,
             isSpawnable = isSpawnable,
             spawnType = spawnType,
+            isCoOwner = isCoOwner,
+            isOwner = isOwner,
+            hasCoOwner = (row.coowner_citizenid ~= nil),
+            coownerName = row.coowner_name or "",
             streetCoords = streetCoords,
             engine = mods.engineHealth or 1000,
             body = mods.bodyHealth or 1000,

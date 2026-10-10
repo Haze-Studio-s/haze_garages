@@ -166,7 +166,10 @@ function renderCards(vehicles) {
         const isListMode = currentMode === 'list';
         let actionButtonHtml = '';
 
-        const transferBtnHtml = hasTransferContract ? `<button class="btn-icon btn-transfer" title="Transferir Veículo (Contrato)"><i class="fas fa-file-contract"></i></button>` : '';
+        const isOwner = (veh.isOwner !== false);
+        const coownerBtnHtml = (isOwner && !veh.isCorporate) ? `<button class="btn-icon btn-coowner" title="Gerenciar Condutor Autorizado ($1.000)"><i class="fas fa-user-friends"></i></button>` : '';
+        const coownerTagHtml = veh.isCoOwner ? `<span class="coowner-tag"><i class="fas fa-id-badge"></i> AUTORIZADO</span>` : '';
+        const transferBtnHtml = (hasTransferContract && isOwner && !veh.isCorporate) ? `<button class="btn-icon btn-transfer" title="Transferir Veículo (Contrato)"><i class="fas fa-file-contract"></i></button>` : '';
 
         if (isListMode) {
             let trackBtnHtml = '';
@@ -191,6 +194,7 @@ function renderCards(vehicles) {
             actionButtonHtml = `
                 ${trackBtnHtml}
                 ${transferBtnHtml}
+                ${coownerBtnHtml}
                 <button class="btn-icon btn-edit-nick" title="Editar Apelido"><i class="fas fa-pen"></i></button>
                 ${mainActionBtnHtml}
             `;
@@ -215,6 +219,7 @@ function renderCards(vehicles) {
 
             actionButtonHtml = `
                 ${transferBtnHtml}
+                ${coownerBtnHtml}
                 <button class="btn-icon btn-edit-nick" title="Editar Apelido"><i class="fas fa-pen"></i></button>
                 ${garageActionBtn}
             `;
@@ -226,6 +231,7 @@ function renderCards(vehicles) {
                     <div class="vehicle-title-row">
                         <h3>${veh.model}</h3>
                         ${nicknameHtml}
+                        ${coownerTagHtml}
                         <span class="status-badge ${statusBadgeClass}">${statusText}</span>
                     </div>
                     <p class="plate-sub">PLACA: ${veh.plate}</p>
@@ -263,6 +269,18 @@ function renderCards(vehicles) {
         `;
 
         // Event Listeners
+        const coownerBtn = card.querySelector('.btn-coowner');
+        if (coownerBtn) {
+            coownerBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                fetch(`https://${GetParentResourceName()}/openCoOwnerManager`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ plate: veh.plate })
+                });
+            });
+        }
+
         const editNickBtn = card.querySelector('.btn-edit-nick');
         if (editNickBtn) {
             editNickBtn.addEventListener('click', (e) => {

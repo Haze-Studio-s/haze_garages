@@ -54,5 +54,12 @@ Locales['pt-BR'] = {
     corporate_logs_unauthorized = "Apenas oficiais superiores a partir da patente %d podem consultar o Livro de Bordo.",
     corporate_not_in_garage = "Você precisa estar próximo a uma garagem corporativa (polícia/gangue) para consultar o Livro de Bordo.",
     corporate_vehicle_spawned = "Viatura corporativa [%s] retirada com sucesso. Registrado no Livro de Bordo.",
-    corporate_vehicle_stored = "Viatura corporativa [%s] devolvida com sucesso. Estado e combustível registrados no Livro de Bordo."
+    corporate_vehicle_stored = "Viatura corporativa [%s] devolvida com sucesso. Estado e combustível registrados no Livro de Bordo.",
+
+    -- Sistema de Coproprietário / Condutor Autorizado (Fase 3)
+    coowner_added_success = "Jogador %s cadastrado com sucesso como condutor autorizado da placa %s! Taxa de %s%s debitada.",
+    coowner_received_success = "Você foi autorizado como condutor do veículo placa %s por %s! Agora você pode retirá-lo da garagem a qualquer momento.",
+    coowner_removed_success = "Condutor autorizado removido com sucesso.",
+    coowner_dialog_title = "👥 Condutor Autorizado",
+    coowner_dialog_desc = "Permite que esta pessoa retire e guarde o veículo (%s) na garagem a qualquer momento. Taxa única: %s%s"
 }

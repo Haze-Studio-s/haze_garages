@@ -104,6 +104,15 @@ Config.CorporateMinGrades = {
 }
 
 -- =================================================================================
+-- Sistema de Coproprietário / Condutor Autorizado (Fase 3)
+-- Permite cadastrar 1 amigo como condutor autorizado por $1.000 para retirar/guardar
+-- o veículo da garagem mesmo quando o proprietário estiver offline.
+-- =================================================================================
+Config.CoOwnerFee = 1000 -- Custo em dólares para cadastrar um condutor autorizado
+Config.CoOwnerCommand = "condutor" -- Comando in-game para gerenciar condutor autorizado
+Config.MaxCoOwnersPerVehicle = 1 -- Limite estrito de 1 condutor autorizado por veículo
+
+-- =================================================================================
 -- Garagens Fixas (Arquivo Exclusivo e Dedicado)
 -- As garagens foram completamente desacopladas deste config.lua e ficam
 -- armazenadas exclusivamente no arquivo dedicado:

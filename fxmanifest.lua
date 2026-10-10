@@ -23,7 +23,8 @@ client_scripts {
     'client/cl-deformation.lua',
     'client/cl-tracker.lua',
     'client/cl-valet.lua',
-    'client/cl-corporate.lua'
+    'client/cl-corporate.lua',
+    'client/cl-coowner.lua'
 }
 
 server_scripts {
@@ -40,7 +41,8 @@ server_scripts {
     'server/sv-autostore.lua',
     'server/sv-tracker.lua',
     'server/sv-impound.lua',
-    'server/sv-valet.lua'
+    'server/sv-valet.lua',
+    'server/sv-coowner.lua'
 }
 
 ui_page 'web/index.html'
