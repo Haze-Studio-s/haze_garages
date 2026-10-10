@@ -34,5 +34,18 @@ Locales['pt-BR'] = {
 
     -- Validações e Erros
     vehicle_already_outside = "Este veículo já está fora da garagem!",
-    error_spawn_reservation = "Aguarde um momento antes de solicitar o veículo novamente."
+    error_spawn_reservation = "Aguarde um momento antes de solicitar o veículo novamente.",
+
+    -- Manobrista Valet (Fase 1)
+    valet_requested = "Manobrista contratado por %s%s! Ele está retirando seu veículo na garagem %s e dirigindo até você.",
+    valet_arrived = "Seu manobrista chegou ao local e está trazendo as chaves até você.",
+    valet_delivered = "Aqui estão as chaves do seu veículo, senhor! Tenha uma excelente viagem.",
+    valet_already_active = "Você já possui um manobrista a caminho!",
+    valet_outside_error = "Este veículo já está fora da garagem (em uso na rua)! Não é possível chamar o manobrista.",
+    valet_impounded_error = "Este veículo está apreendido pela polícia no Pátio (Impound)!",
+    valet_not_stored_error = "O veículo precisa estar guardado em uma garagem para ser entregue pelo manobrista.",
+    valet_no_money = "Saldo insuficiente para pagar a taxa do manobrista (%s%s).",
+    valet_ped_name = "Manobrista Valet",
+    valet_blip_label = "Valet a Caminho: %s",
+    valet_cancelled = "O serviço de manobrista foi cancelado."
 }

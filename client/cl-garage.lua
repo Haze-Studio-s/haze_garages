@@ -864,7 +864,17 @@ end)
 
 RegisterNUICallback("valetPhoneVehicle", function(data, cb)
     if not data or not data.plate then cb({ ok = false }) return end
-    TriggerEvent("haze_garages:client:openGarageMenu", "legion_square")
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = "closePhoneNUI" })
+    TriggerEvent("haze_garages:client:requestValet", data.plate)
+    cb({ ok = true })
+end)
+
+RegisterNUICallback("valetGarageVehicle", function(data, cb)
+    if not data or not data.plate then cb({ ok = false }) return end
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = "closeGarage" })
+    TriggerEvent("haze_garages:client:requestValet", data.plate)
     cb({ ok = true })
 end)
 

@@ -59,6 +59,14 @@ Config.StoreCountdownSeconds = 5 -- Tempo em segundos até o veículo sumir apó
 Config.TowRecoveryFee = 500 -- Taxa para rebocar veículo retido de empresa/facção para a garagem central
 Config.DefaultPublicGarage = "legion_square" -- Garagem de destino padrão do reboque de veículos retidos
 
+-- Configurações de Manobrista NPC (Valet)
+Config.ValetPrice = 150 -- Taxa de serviço do manobrista
+Config.ValetPedModel = "s_m_m_valet_01" -- Modelo do Ped Manobrista (uniformizado)
+Config.ValetDrivingStyle = 786603 -- Condução defensiva e respeitando tráfego
+Config.ValetDrivingSpeed = 16.0 -- Velocidade de direção moderada (m/s)
+Config.ValetTimeoutSeconds = 180 -- Timeout de segurança caso o trânsito tranque totalmente
+Config.ValetCommand = "valet" -- Comando in-game para chamar o manobrista
+
 -- =================================================================================
 -- Garagens Fixas (Arquivo Exclusivo e Dedicado)
 -- As garagens foram completamente desacopladas deste config.lua e ficam

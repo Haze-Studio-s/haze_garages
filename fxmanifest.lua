@@ -21,7 +21,8 @@ client_scripts {
     'client/cl-street-parking.lua',
     'client/cl-parking-meters.lua',
     'client/cl-deformation.lua',
-    'client/cl-tracker.lua'
+    'client/cl-tracker.lua',
+    'client/cl-valet.lua'
 }
 
 server_scripts {
@@ -36,7 +37,8 @@ server_scripts {
     'server/sv-deformation.lua',
     'server/sv-autostore.lua',
     'server/sv-tracker.lua',
-    'server/sv-impound.lua'
+    'server/sv-impound.lua',
+    'server/sv-valet.lua'
 }
 
 ui_page 'web/index.html'

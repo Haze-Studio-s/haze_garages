@@ -290,10 +290,36 @@ O sistema conta com um assistente guiado completo para criar e gerenciar garagen
 
 ---
 
+### 🔹 Teste 15: Valet com Manobrista NPC Dirigindo até Você (Fase 1)
+1. **Solicitação via Celular ou Comando**:
+   - Abra o App do Celular (`/garagemapp` ou pelo `vp_phone`) ou use o comando `/valet [placa]`.
+   - Se digitar apenas `/valet`, um menu modal do `ox_lib` lista todos os seus veículos atualmente guardados (`state = 1`) com nome, placa, garagem de origem e taxa de serviço ($150).
+2. **Validações de Bloqueio**:
+   - Tente solicitar o valet de um veículo que já está fora na rua (`state = 0`): deve recusar com notificação: *"Este veículo já está fora da garagem (em uso na rua)! Não é possível chamar o manobrista."*
+   - Tente solicitar o valet de um veículo apreendido no Impound (`state = 2`): deve recusar com notificação de retenção policial.
+   - Tente solicitar enquanto você estiver dentro de um carro: deve recusar solicitando que você desça do veículo.
+3. **Despacho & Trajeto do NPC no Trânsito Real**:
+   - O servidor localiza a garagem pública mais próxima de onde você está (`category == 'car'`).
+   - O veículo spawna na vaga livre da garagem com o NPC Manobrista uniformizado (`s_m_m_valet_01`) ao volante.
+   - Um blip amarelo móvel é criado no radar com o texto `Valet a Caminho: [PLACA]`.
+   - As portas do veículo são trancadas contra furto de estranhos.
+   - O manobrista pilota o veículo respeitando as regras de trânsito e semáforos (`drivingStyle = 786603`) até onde você está.
+4. **Chegada, Parada no Meio-Fio e Entrega de Chaves**:
+   - Ao se aproximar a menos de ~18 metros de você, o manobrista desacelera e encosta no meio-fio (`BringVehicleToHalt`).
+   - O veículo para suavemente, puxa freio de mão, liga pisca-alerta e destranca as portas.
+   - O manobrista abre a porta, sai do veículo e caminha diretamente até você na calçada.
+   - Ao se aproximar a 1.8 metros, ele se posiciona de frente para você e toca a animação de entrega de chaves com prop nativo de chaves na mão (`mp_common:givetake2_a`).
+   - Notificação em tela: *"Aqui estão as chaves do seu veículo, senhor! Tenha uma excelente viagem."*
+   - As chaves são sincronizadas automaticamente com o `qbx_vehiclekeys`.
+   - O manobrista despede-se e vai embora a pé tranquilamente pela calçada (`TaskWanderStandard`).
+
+---
+
 ## 🔍 Resumo de Comandos Rápidos para Testes
 
 | Comando | Parâmetros | Descrição |
 | :--- | :--- | :--- |
+| `/valet` | `[placa]` (opcional) | Solicita manobrista NPC para trazer seu veículo da garagem pública mais próxima |
 | `/listarveiculos` | Nenhum | Abre o menu geral de veículos |
 | `/guardar` | Nenhum | Guarda o veículo na garagem física mais próxima |
 | `/garagens` | Nenhum | Lista todas as garagens e permite marcar no GPS |

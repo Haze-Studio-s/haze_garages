@@ -179,7 +179,10 @@ function renderCards(vehicles) {
             } else if (veh.spawnType === 'out') {
                 garageActionBtn = `<button class="btn-spawn" disabled><i class="fas fa-car-side"></i> JÁ FORA (EM USO)</button>`;
             } else if (veh.spawnType === 'fixed_other') {
-                garageActionBtn = `<button class="btn-spawn btn-track-garage" data-garage="${veh.garage}"><i class="fas fa-location-dot"></i> OUTRA GARAGEM</button>`;
+                garageActionBtn = `
+                    <button class="btn-spawn btn-valet-action" data-plate="${veh.plate}" title="Manobrista busca o veículo e traz até você ($150)"><i class="fas fa-bell-concierge"></i> VALET ($150)</button>
+                    <button class="btn-spawn btn-track-garage" data-garage="${veh.garage}" style="margin-left: 6px;"><i class="fas fa-location-dot"></i> GPS</button>
+                `;
             } else if (veh.spawnType === 'impound') {
                 garageActionBtn = `<button class="btn-spawn" disabled><i class="fas fa-lock"></i> NO IMPOUND</button>`;
             } else {
@@ -272,6 +275,19 @@ function renderCards(vehicles) {
                     body: JSON.stringify({
                         garageId: gid
                     })
+                });
+            });
+        });
+
+        const valetActionBtns = card.querySelectorAll('.btn-valet-action');
+        valetActionBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeApp();
+                fetch(`https://${GetParentResourceName()}/valetGarageVehicle`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ plate: veh.plate })
                 });
             });
         });

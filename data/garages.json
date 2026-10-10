@@ -139,5 +139,49 @@
     "pedModel": "s_m_y_valet_01",
     "blip": { "sprite": 67, "color": 1, "scale": 0.75 },
     "price": 0
+  },
+  "sandy_shores": {
+    "label": "Garagem Pública - Sandy Shores",
+    "type": "public",
+    "category": "car",
+    "coords": { "x": 1876.5, "y": 3692.1, "z": 33.5, "w": 30.0 },
+    "dropZone": {
+      "points": [
+        { "x": 1870.0, "y": 3685.0, "z": 33.5 },
+        { "x": 1885.0, "y": 3685.0, "z": 33.5 },
+        { "x": 1885.0, "y": 3700.0, "z": 33.5 },
+        { "x": 1870.0, "y": 3700.0, "z": 33.5 }
+      ],
+      "thickness": 6.0
+    },
+    "spawnCoords": [
+      { "x": 1880.2, "y": 3695.4, "z": 33.5, "w": 210.0 },
+      { "x": 1883.8, "y": 3698.1, "z": 33.5, "w": 210.0 }
+    ],
+    "pedModel": "a_m_m_hillbilly_01",
+    "blip": { "sprite": 357, "color": 3, "scale": 0.75 },
+    "price": 0
+  },
+  "paleto_bay": {
+    "label": "Garagem Pública - Paleto Bay",
+    "type": "public",
+    "category": "car",
+    "coords": { "x": -106.2, "y": 6467.4, "z": 31.6, "w": 45.0 },
+    "dropZone": {
+      "points": [
+        { "x": -115.0, "y": 6460.0, "z": 31.6 },
+        { "x": -98.0, "y": 6460.0, "z": 31.6 },
+        { "x": -98.0, "y": 6475.0, "z": 31.6 },
+        { "x": -115.0, "y": 6475.0, "z": 31.6 }
+      ],
+      "thickness": 6.0
+    },
+    "spawnCoords": [
+      { "x": -102.5, "y": 6472.0, "z": 31.6, "w": 225.0 },
+      { "x": -99.1, "y": 6475.2, "z": 31.6, "w": 225.0 }
+    ],
+    "pedModel": "a_m_y_business_01",
+    "blip": { "sprite": 357, "color": 3, "scale": 0.75 },
+    "price": 0
   }
 }
