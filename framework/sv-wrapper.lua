@@ -291,3 +291,47 @@ function Haze.Server.NotifyPoliceAlert(coords, plate, title, message)
         end
     end
 end
+
+--- Verifica se o jogador possui permissões administrativas no servidor
+--- @param src number
+--- @return boolean
+function Haze.Server.IsAdmin(src)
+    src = tonumber(src)
+    if not src or src <= 0 then return false end
+
+    -- 1. ACE Permissions nativas do FiveM
+    if IsPlayerAceAllowed(src, "command") or IsPlayerAceAllowed(src, "admin") or IsPlayerAceAllowed(src, "group.admin") or IsPlayerAceAllowed(src, "group.god") then
+        return true
+    end
+
+    -- 2. QBX Core
+    if GetResourceState('qbx_core') == 'started' then
+        local ok, hasPerm = pcall(function()
+            return exports.qbx_core:HasPermission(src, 'admin') or exports.qbx_core:HasPermission(src, 'god')
+        end)
+        if ok and hasPerm then return true end
+    end
+
+    -- 3. QB-Core
+    if GetResourceState('qb-core') == 'started' then
+        local ok, QBCore = pcall(function() return exports['qb-core']:GetCoreObject() end)
+        if ok and QBCore and QBCore.Functions then
+            if QBCore.Functions.HasPermission(src, 'admin') or QBCore.Functions.HasPermission(src, 'god') then
+                return true
+            end
+        end
+    end
+
+    -- 4. ESX Legacy
+    if GetResourceState('es_extended') == 'started' then
+        local ok, ESX = pcall(function() return exports['es_extended']:getSharedObject() end)
+        if ok and ESX then
+            local xPlayer = ESX.GetPlayerFromId(src)
+            if xPlayer and (xPlayer.getGroup() == 'admin' or xPlayer.getGroup() == 'superadmin') then
+                return true
+            end
+        end
+    end
+
+    return false
+end

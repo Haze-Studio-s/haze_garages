@@ -16,6 +16,7 @@ shared_scripts {
 client_scripts {
     'framework/cl-wrapper.lua',
     'client/cl-main.lua',
+    'client/cl-creator.lua',
     'client/cl-garage.lua',
     'client/cl-street-parking.lua',
     'client/cl-parking-meters.lua',
@@ -27,6 +28,8 @@ server_scripts {
     '@oxmysql/lib/MySQL.lua',
     'framework/sv-wrapper.lua',
     'server/sv-database.lua',
+    'server/sv-garages-data.lua',
+    'server/sv-creator.lua',
     'server/sv-garage.lua',
     'server/sv-street-parking.lua',
     'server/sv-parking-meters.lua',
@@ -45,7 +48,8 @@ files {
     'web/phone.html',
     'web/phone.css',
     'web/phone.js',
-    'web/icon.png'
+    'web/icon.png',
+    'data/garages.json'
 }
 
 exports {

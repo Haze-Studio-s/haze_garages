@@ -2,6 +2,49 @@ local spawnedGaragePeds = {}
 local garageBlips = {}
 local garagePoints = {}
 
+local function toVec3(v)
+    if not v then return vec3(0.0, 0.0, 0.0) end
+    if type(v) == "vector3" then return v end
+    return vec3(tonumber(v.x or v[1]) or 0.0, tonumber(v.y or v[2]) or 0.0, tonumber(v.z or v[3]) or 0.0)
+end
+
+local function toVec4(v)
+    if not v then return vec4(0.0, 0.0, 0.0, 0.0) end
+    if type(v) == "vector4" then return v end
+    return vec4(tonumber(v.x or v[1]) or 0.0, tonumber(v.y or v[2]) or 0.0, tonumber(v.z or v[3]) or 0.0, tonumber(v.w or v.h or v[4]) or 0.0)
+end
+
+local function normalizeGaragesTable(rawTable)
+    local out = {}
+    for gId, raw in pairs(rawTable or {}) do
+        local g = table.clone(raw)
+        g.coords = toVec4(g.coords)
+
+        if g.dropZone then
+            if g.dropZone.points and #g.dropZone.points > 0 then
+                local normPoints = {}
+                for i = 1, #g.dropZone.points do
+                    normPoints[#normPoints + 1] = toVec3(g.dropZone.points[i])
+                end
+                g.dropZone.points = normPoints
+            elseif g.dropZone.coords then
+                g.dropZone.coords = toVec3(g.dropZone.coords)
+            end
+        end
+
+        if g.spawnCoords and #g.spawnCoords > 0 then
+            local normSpawns = {}
+            for i = 1, #g.spawnCoords do
+                normSpawns[#normSpawns + 1] = toVec4(g.spawnCoords[i])
+            end
+            g.spawnCoords = normSpawns
+        end
+
+        out[gId] = g
+    end
+    return out
+end
+
 local function cleanupGaragePeds()
     for _, ped in ipairs(spawnedGaragePeds) do
         if DoesEntityExist(ped) then
@@ -307,7 +350,7 @@ AddEventHandler("onResourceStop", function(resourceName)
     end
 end)
 
-AddEventHandler("haze_garages:client:init", function()
+local function initGaragesMesh()
     cleanupGaragePeds()
     refreshGarageBlips()
 
@@ -431,6 +474,27 @@ AddEventHandler("haze_garages:client:init", function()
                 garagePoints[#garagePoints + 1] = drivePt
             end
         end
+    end
+end
+
+-- Evento de inicialização do cliente
+AddEventHandler("haze_garages:client:init", function()
+    CreateThread(function()
+        local ok, serverGarages = pcall(function()
+            return lib.callback.await("haze_garages:server:getGarages", false)
+        end)
+        if ok and serverGarages and type(serverGarages) == "table" and next(serverGarages) ~= nil then
+            Config.FixedGarages = normalizeGaragesTable(serverGarages)
+        end
+        initGaragesMesh()
+    end)
+end)
+
+-- Evento de hot-reload em tempo real quando garagens são criadas/editadas/excluídas
+RegisterNetEvent("haze_garages:client:syncGarages", function(serverGarages)
+    if serverGarages and type(serverGarages) == "table" then
+        Config.FixedGarages = normalizeGaragesTable(serverGarages)
+        initGaragesMesh()
     end
 end)
 

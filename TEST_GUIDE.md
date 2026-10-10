@@ -255,6 +255,30 @@ O sistema utiliza **Áreas Poligonais Invisíveis de 4 Pontos** (`dropZone.point
 
 ---
 
+### 🔹 Teste 15: Criador In-Game & Gerenciador de Garagens (/criargaragem & /gerenciargaragens)
+O sistema conta com um assistente guiado completo para criar e gerenciar garagens 100% in-game com gravação física imediata em `data/garages.json` e hot-reload via broadcast para todos os jogadores sem reiniciar o servidor.
+
+1. **Permissão Administrativa**:
+   - O comando valida permissões administrativas (`group.admin`, ACE FiveM, QBX Core, QBCore ou ESX).
+   - Jogadores sem permissão recebem aviso de bloqueio no chat/notificação.
+
+2. **Passo a Passo de Criação (/criargaragem ou /novagaragem)**:
+   - Digite `/criargaragem` no chat.
+   - **Passo 1 (Formulário ox_lib)**: Preencha ID único (ex: `shopping_central`), Nome visível, Tipo (`public`, `job`, `gang` ou `impound`), Job/Gangue se aplicável, Categoria (`car`, `boat`, `air`), Modelo do Ped NPC e Blip.
+   - **Passo 2 (NPC Atendente)**: Fique em pé na posição e direção desejada para o atendente NPC e pressione **`[E]`**.
+   - **Passo 3 (Área de Devolução - 4 Cantos)**: Caminhe até cada um dos 4 cantos da área de devolução e pressione **`[E]`** em cada um. Marcadores temporários orientam o admin durante a marcação e desaparecem completamente ao concluir (o asfalto permanece 100% limpo).
+   - **Passo 4 (Vagas de Saída)**: Posicione-se (a pé ou no veículo) nas vagas de spawn desejadas e pressione **`[E]`** para cada vaga. Pressione **`[G]`** para concluir.
+   - **Passo 5 (Confirmação)**: Um resumo é exibido via diálogo. Ao confirmar, o arquivo `data/garages.json` é gravado fisicamente no disco e a garagem entra em funcionamento instantaneamente no mapa para todos os jogadores!
+
+3. **Painel de Gerenciamento (/gerenciargaragens ou /garagensadmin)**:
+   - Digite `/gerenciargaragens`.
+   - Um menu contextual exibe a lista de todas as garagens cadastradas no servidor.
+   - Selecione qualquer garagem para:
+     - **Teleportar até a Garagem**: Leva o admin até as coordenadas do atendente NPC.
+     - **Excluir Garagem**: Remove a garagem do arquivo `data/garages.json` e a desativa em tempo real com confirmação.
+
+---
+
 ## 🔍 Resumo de Comandos Rápidos para Testes
 
 | Comando | Parâmetros | Descrição |
@@ -262,6 +286,8 @@ O sistema utiliza **Áreas Poligonais Invisíveis de 4 Pontos** (`dropZone.point
 | `/listarveiculos` | Nenhum | Abre o menu geral de veículos |
 | `/guardar` | Nenhum | Guarda o veículo na garagem física mais próxima |
 | `/garagens` | Nenhum | Lista todas as garagens e permite marcar no GPS |
+| `/criargaragem` | Nenhum | Inicia o Wizard de criação de garagens in-game (Admin) |
+| `/gerenciargaragens` | Nenhum | Abre o menu de gerenciamento e teleporte/exclusão (Admin) |
 | `/estacionar` | Nenhum | Estaciona dinamicamente na rua |
 | `/garagemapp` | Nenhum | Abre o preview do App de Garagem do celular |
 | `/dv` | `[raio]` (opcional) | Deleta e guarda veículo próprio na garagem mais próxima |

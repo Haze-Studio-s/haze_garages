@@ -59,8 +59,14 @@ Config.StoreCountdownSeconds = 5 -- Tempo em segundos até o veículo sumir apó
 Config.TowRecoveryFee = 500 -- Taxa para rebocar veículo retido de empresa/facção para a garagem central
 Config.DefaultPublicGarage = "legion_square" -- Garagem de destino padrão do reboque de veículos retidos
 
--- Garagens Fixas no Mapa (Públicas, Corporativas/Job e Gangues)
-Config.FixedGarages = {
+-- =================================================================================
+-- Garagens Fixas no Mapa
+-- As garagens são gerenciadas e salvas em tempo real no arquivo dedicado:
+-- data/garages.json
+-- Você pode criar, editar e excluir garagens diretamente dentro do jogo ou pelo arquivo.
+-- A tabela abaixo serve como modelo padrão e fallback de inicialização.
+-- =================================================================================
+Config.FixedGarages = Config.FixedGarages or {
     ["legion_square"] = {
         label = "Garagem Central - Praça Legion",
         type = "public",
