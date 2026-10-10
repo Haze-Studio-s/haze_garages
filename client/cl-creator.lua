@@ -436,6 +436,260 @@ Deseja gravar fisicamente no arquivo `data/garages.json` e aplicar no servidor a
 end
 
 --- Painel de Gerenciamento Administrativo de Garagens
+--- Visualização Completa dos Detalhes Técnicos de uma Garagem
+local function viewGarageDetails(garage)
+    local pointsStr = ""
+    if garage.dropZone and garage.dropZone.points and #garage.dropZone.points > 0 then
+        for i, pt in ipairs(garage.dropZone.points) do
+            pointsStr = pointsStr .. string.format("\n  - Canto #%d: `vec3(%.2f, %.2f, %.2f)`", i, pt.x, pt.y, pt.z)
+        end
+    else
+        pointsStr = "Nenhum ponto registrado."
+    end
+
+    local spawnsStr = ""
+    if garage.spawnCoords and #garage.spawnCoords > 0 then
+        for i, sp in ipairs(garage.spawnCoords) do
+            spawnsStr = spawnsStr .. string.format("\n  - Vaga #%d: `vec4(%.2f, %.2f, %.2f, %.1f)`", i, sp.x, sp.y, sp.z, sp.w or sp.h or 0.0)
+        end
+    else
+        spawnsStr = "Nenhuma vaga registrada."
+    end
+
+    local detailsContent = string.format([[
+### Detalhes Técnicos: %s
+- **ID Único:** `%s`
+- **Tipo:** `%s` %s
+- **Categoria:** `%s`
+- **Atendente NPC:** `%s` (x: %.2f, y: %.2f, z: %.2f, h: %.1f)
+- **Blip no Radar:** Sprite `%d` | Cor `%d`
+
+#### Área de Devolução (DropZone Poligonal):
+- **Espessura Z:** %.1f metros%s
+
+#### Vagas de Saída (%d registradas):%s
+    ]],
+        garage.label,
+        garage.id,
+        garage.type,
+        (garage.job and ("- Emprego: `" .. garage.job .. "`") or (garage.gang and ("- Gangue: `" .. garage.gang .. "`") or "")),
+        garage.category,
+        garage.pedModel or "s_m_m_valet_01",
+        garage.coords.x, garage.coords.y, garage.coords.z, garage.coords.w or 0.0,
+        (garage.blip and garage.blip.sprite) or 357,
+        (garage.blip and garage.blip.color) or 3,
+        (garage.dropZone and garage.dropZone.thickness) or 6.0,
+        pointsStr,
+        garage.spawnsCount or 0,
+        spawnsStr
+    )
+
+    lib.alertDialog({
+        header = string.format('Garagem [%s]', garage.id),
+        content = detailsContent,
+        centered = true,
+        cancel = false
+    })
+end
+
+--- Edição Rápida de Metadados da Garagem
+local function editGarageMetadata(garage, onComplete)
+    CreateThread(function()
+        local form = lib.inputDialog(string.format("Editar: %s", garage.label), {
+            {
+                type = 'input',
+                label = 'Nome de Exibição (Label)',
+                default = garage.label,
+                required = true,
+                min = 2,
+                max = 50
+            },
+            {
+                type = 'select',
+                label = 'Tipo de Garagem',
+                options = {
+                    { value = 'public', label = 'Pública (Todos os cidadãos)' },
+                    { value = 'job', label = 'Trabalho / Job (Exclusivo emprego)' },
+                    { value = 'gang', label = 'Gangue / Facção (Exclusivo facção)' },
+                    { value = 'impound', label = 'Apreensão / Pátio de Apreendidos' }
+                },
+                default = garage.type or 'public',
+                required = true
+            },
+            {
+                type = 'input',
+                label = 'Nome do Emprego ou Gangue',
+                description = 'Preencha se o tipo for Job ou Gangue',
+                default = garage.job or garage.gang or ''
+            },
+            {
+                type = 'select',
+                label = 'Categoria de Veículos',
+                options = {
+                    { value = 'car', label = 'Terrestre (Carros, Motocicletas)' },
+                    { value = 'boat', label = 'Náutico (Barcos, Lanchas)' },
+                    { value = 'air', label = 'Aéreo (Helicópteros, Aviões)' }
+                },
+                default = garage.category or 'car',
+                required = true
+            },
+            {
+                type = 'input',
+                label = 'Modelo do Atendente NPC',
+                default = garage.pedModel or 's_m_m_valet_01'
+            },
+            {
+                type = 'number',
+                label = 'Ícone do Blip (Sprite ID)',
+                default = (garage.blip and garage.blip.sprite) or 357
+            },
+            {
+                type = 'number',
+                label = 'Cor do Blip (Color ID)',
+                default = (garage.blip and garage.blip.color) or 3
+            }
+        })
+
+        if not form then return end
+
+        local label = form[1]
+        local gType = form[2] or "public"
+        local jobOrGang = form[3] or ""
+        local category = form[4] or "car"
+        local pedModel = (form[5] and form[5] ~= "") and form[5] or "s_m_m_valet_01"
+        local blipSprite = tonumber(form[6]) or 357
+        local blipColor = tonumber(form[7]) or 3
+
+        local jobName = (gType == "job" and jobOrGang ~= "") and jobOrGang or nil
+        local gangName = (gType == "gang" and jobOrGang ~= "") and jobOrGang or nil
+
+        if gType == "job" and not jobName then
+            lib.notify({ title = "Haze Garages", description = "Para garagem Job, informe o nome do emprego!", type = "error" })
+            return
+        end
+
+        if gType == "gang" and not gangName then
+            lib.notify({ title = "Haze Garages", description = "Para garagem Gangue, informe o nome da gangue!", type = "error" })
+            return
+        end
+
+        local payload = {
+            id = garage.id,
+            label = label,
+            type = gType,
+            job = jobName,
+            gang = gangName,
+            category = category,
+            coords = garage.coords,
+            dropZone = garage.dropZone,
+            spawnCoords = garage.spawnCoords,
+            pedModel = pedModel,
+            blip = {
+                sprite = blipSprite,
+                color = blipColor,
+                scale = (garage.blip and garage.blip.scale) or 0.75
+            },
+            price = garage.price or 0,
+            overwrite = true
+        }
+
+        local res = lib.callback.await("haze_garages:server:saveGarage", false, payload)
+        if res and res.success then
+            lib.notify({
+                title = "Haze Garages",
+                description = string.format("Garagem '%s' atualizada com sucesso em data/garages.json!", label),
+                type = "success"
+            })
+            if onComplete then onComplete() end
+        else
+            lib.notify({
+                title = "Haze Garages",
+                description = (res and res.msg) or "Erro ao atualizar garagem.",
+                type = "error"
+            })
+        end
+    end)
+end
+
+--- Re-posicionamento Rápido do Atendente NPC no Local Atual do Administrador
+local function repositionGaragePed(garage, onComplete)
+    CreateThread(function()
+        lib.notify({
+            title = "Re-posicionar Atendente",
+            description = string.format("Fique de pé onde o atendente de '%s' deve ficar e pressione [E].", garage.label),
+            type = "inform",
+            duration = 8000
+        })
+
+        lib.showTextUI("[E] Confirmar Nova Posição | [X] Cancelar", { position = "top-center" })
+
+        local isRepositioning = true
+        local newCoords = nil
+
+        while isRepositioning do
+            Wait(0)
+            DisableControlAction(0, 73, true) -- X
+
+            local ped = cache.ped or PlayerPedId()
+            local pos = GetEntityCoords(ped)
+            DrawMarker(2, pos.x, pos.y, pos.z + 1.1, 0.0, 0.0, 0.0, 180.0, 0.0, 0.0, 0.25, 0.25, 0.25, 16, 185, 129, 200, false, true, 2, false, nil, nil, false)
+
+            if IsControlJustPressed(0, 38) then -- [E]
+                local h = GetEntityHeading(ped)
+                newCoords = {
+                    x = math.floor(pos.x * 100) / 100,
+                    y = math.floor(pos.y * 100) / 100,
+                    z = math.floor(pos.z * 100) / 100,
+                    w = math.floor(h * 100) / 100
+                }
+                PlaySoundFrontend(-1, "SELECT", "HUD_FRONTEND_DEFAULT_SOUNDSET", true)
+                break
+            elseif IsDisabledControlJustPressed(0, 73) then -- [X]
+                isRepositioning = false
+                lib.hideTextUI()
+                lib.notify({ title = "Haze Garages", description = "Re-posicionamento cancelado.", type = "inform" })
+                return
+            end
+        end
+
+        lib.hideTextUI()
+        if not newCoords then return end
+
+        local payload = {
+            id = garage.id,
+            label = garage.label,
+            type = garage.type,
+            job = garage.job,
+            gang = garage.gang,
+            category = garage.category,
+            coords = newCoords,
+            dropZone = garage.dropZone,
+            spawnCoords = garage.spawnCoords,
+            pedModel = garage.pedModel,
+            blip = garage.blip,
+            price = garage.price or 0,
+            overwrite = true
+        }
+
+        local res = lib.callback.await("haze_garages:server:saveGarage", false, payload)
+        if res and res.success then
+            lib.notify({
+                title = "Haze Garages",
+                description = string.format("Atendente da garagem '%s' reposicionado com sucesso!", garage.label),
+                type = "success"
+            })
+            if onComplete then onComplete() end
+        else
+            lib.notify({
+                title = "Haze Garages",
+                description = (res and res.msg) or "Erro ao atualizar posição do atendente.",
+                type = "error"
+            })
+        end
+    end)
+end
+
+--- Painel de Gerenciamento Administrativo de Garagens
 local function openAdminGaragesMenu()
     CreateThread(function()
         local garagesList = lib.callback.await("haze_garages:server:getAdminGaragesList", false)
@@ -457,6 +711,31 @@ local function openAdminGaragesMenu()
                 onSelect = function()
                     CreateThread(function()
                         startGarageCreationWizard()
+                    end)
+                end
+            },
+            {
+                title = '[🔄] Sincronizar / Recarregar do Disco',
+                description = 'Recarrega data/garages.json do disco e sincroniza sem restart',
+                icon = 'arrows-rotate',
+                iconColor = '#3b82f6',
+                onSelect = function()
+                    CreateThread(function()
+                        local reloadRes = lib.callback.await("haze_garages:server:reloadGaragesFromFile", false)
+                        if reloadRes and reloadRes.success then
+                            lib.notify({
+                                title = "Haze Garages",
+                                description = reloadRes.msg or "Garagens sincronizadas do arquivo com sucesso!",
+                                type = "success"
+                            })
+                            openAdminGaragesMenu()
+                        else
+                            lib.notify({
+                                title = "Haze Garages",
+                                description = (reloadRes and reloadRes.msg) or "Erro ao recarregar garagens.",
+                                type = "error"
+                            })
+                        end
                     end)
                 end
             }
@@ -490,6 +769,37 @@ local function openAdminGaragesMenu()
                                         description = string.format("Teleportado para a garagem '%s'!", g.label),
                                         type = "success"
                                     })
+                                end
+                            },
+                            {
+                                title = 'Ver Detalhes e Coordenadas',
+                                description = 'Exibe todas as vagas, 4 cantos da dropZone e parâmetros técnicos',
+                                icon = 'circle-info',
+                                iconColor = '#06b6d4',
+                                onSelect = function()
+                                    viewGarageDetails(g)
+                                end
+                            },
+                            {
+                                title = 'Editar Informações Básicas',
+                                description = 'Altera nome, tipo, cargo/gangue, categoria, ped ou blip',
+                                icon = 'pen-to-square',
+                                iconColor = '#f59e0b',
+                                onSelect = function()
+                                    editGarageMetadata(g, function()
+                                        openAdminGaragesMenu()
+                                    end)
+                                end
+                            },
+                            {
+                                title = 'Re-posicionar Atendente NPC',
+                                description = 'Atualiza o local do atendente para a sua posição e ângulo atuais',
+                                icon = 'person-walking',
+                                iconColor = '#8b5cf6',
+                                onSelect = function()
+                                    repositionGaragePed(g, function()
+                                        openAdminGaragesMenu()
+                                    end)
                                 end
                             },
                             {

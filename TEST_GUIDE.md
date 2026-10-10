@@ -270,15 +270,20 @@ O sistema conta com um assistente guiado completo para criar e gerenciar garagen
    - **Passo 4 (Vagas de Saída)**: Posicione-se (a pé ou no veículo) nas vagas de spawn desejadas e pressione **`[E]`** para cada vaga. Pressione **`[G]`** para concluir.
    - **Passo 5 (Confirmação)**: Um resumo é exibido via diálogo. Ao confirmar, o arquivo `data/garages.json` é gravado fisicamente no disco e a garagem entra em funcionamento instantaneamente no mapa para todos os jogadores!
 
-3. **Painel de Gerenciamento (/gerenciargaragens ou /garagensadmin)**:
+3. **Painel de Gerenciamento & Edição (/gerenciargaragens ou /garagensadmin)**:
    - Digite `/gerenciargaragens`.
-   - Um menu contextual exibe a lista de todas as garagens cadastradas no servidor.
-   - Selecione qualquer garagem para:
-     - **Teleportar até a Garagem**: Leva o admin até as coordenadas do atendente NPC.
-     - **Excluir Garagem**: Remove a garagem do arquivo `data/garages.json` e a desativa em tempo real com confirmação.
+   - Um menu contextual exibe a lista de todas as garagens cadastradas no servidor, além dos botões de ação globais:
+     - **`[+] Criar Nova Garagem`**: Abre o assistente de criação guiada.
+     - **`[🔄] Sincronizar / Recarregar do Disco`**: Lê o arquivo `data/garages.json` e sincroniza instantaneamente com todos os jogadores sem reiniciar o servidor.
+   - Ao selecionar qualquer garagem da lista, o submenu disponibiliza:
+     - **📍 Teleportar até a Garagem**: Leva o admin diretamente às coordenadas do atendente NPC.
+     - **ℹ️ Ver Detalhes e Coordenadas**: Abre relatório técnico detalhado com IDs, blips, espessura da zona, coordenadas dos 4 cantos e todas as vagas de spawn registradas.
+     - **✏️ Editar Informações Básicas**: Abre formulário com dados atuais pré-preenchidos para alterar nome, tipo (pública/job/gangue/impound), categoria, modelo do NPC ou ícone/cor do blip mantendo os pontos demarcados intactos.
+     - **🚶 Re-posicionar Atendente NPC**: Permite ao admin ficar de pé no novo local desejado e pressionar **`[E]`** para atualizar a posição e ângulo do atendente sem precisar refazer as vagas.
+     - **🗑️ Excluir Garagem**: Remove a garagem permanentemente do arquivo `data/garages.json` e a desativa em tempo real no servidor após confirmação.
 
 4. **Teste de Hot-Reload em Tempo Real (Zero Restart)**:
-   - Crie uma garagem com `/criargaragem` ou exclua uma com `/gerenciargaragens`.
+   - Crie uma garagem com `/criargaragem`, edite uma com `/gerenciargaragens` ou exclua uma.
    - Observe o console F8 do cliente: `[Haze Garages] Hot-reload executado com sucesso: X garagens ativas sem restart.`
    - Todos os peds antigos, pontos de lib e blips são limpos de forma atômica (`removeLocalEntity`, `pt:remove()`, `RemoveBlip()`).
    - A nova malha de entidades e zonas é reconstruída instantaneamente sem nenhum restart no servidor e mantendo o resmon constante em 0.00ms.

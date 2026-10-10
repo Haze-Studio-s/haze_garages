@@ -173,6 +173,11 @@ lib.callback.register("haze_garages:server:getAdminGaragesList", function(source
             gang = gData.gang,
             category = gData.category or "car",
             coords = gData.coords,
+            pedModel = gData.pedModel or "s_m_m_valet_01",
+            blip = gData.blip or { sprite = 357, color = 3, scale = 0.75 },
+            price = gData.price or 0,
+            dropZone = gData.dropZone,
+            spawnCoords = gData.spawnCoords,
             spawnsCount = gData.spawnCoords and #gData.spawnCoords or 0,
             pointsCount = gData.dropZone and gData.dropZone.points and #gData.dropZone.points or 0
         }
@@ -180,4 +185,24 @@ lib.callback.register("haze_garages:server:getAdminGaragesList", function(source
 
     table.sort(list, function(a, b) return a.label < b.label end)
     return list
+end)
+
+--- Recarrega os dados do arquivo data/garages.json e sincroniza com todos os jogadores em tempo real
+lib.callback.register("haze_garages:server:reloadGaragesFromFile", function(source)
+    local src = source
+    if not Haze.Server.IsAdmin(src) then
+        return { success = false, msg = "Sem permissão administrativa." }
+    end
+
+    local loaded = LoadGaragesData()
+    if loaded then
+        local count = 0
+        for _ in pairs(Config.FixedGarages or {}) do count = count + 1 end
+        TriggerClientEvent("haze_garages:client:syncGarages", -1, Config.FixedGarages)
+        local adminName = GetPlayerName(src)
+        print(string.format("^2[Haze Garages]^7 %s (ID: %d) recarregou %d garagens do arquivo data/garages.json.^7", adminName, src, count))
+        return { success = true, count = count, msg = string.format("%d garagens recarregadas e sincronizadas do arquivo!", count) }
+    else
+        return { success = false, msg = "Falha ao ler data/garages.json do disco." }
+    end
 end)
