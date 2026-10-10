@@ -47,5 +47,12 @@ Locales['pt-BR'] = {
     valet_no_money = "Saldo insuficiente para pagar a taxa do manobrista (%s%s).",
     valet_ped_name = "Manobrista Valet",
     valet_blip_label = "Valet a Caminho: %s",
-    valet_cancelled = "O serviço de manobrista foi cancelado."
+    valet_cancelled = "O serviço de manobrista foi cancelado.",
+
+    -- Gestão Corporativa (Fase 2)
+    corporate_no_grade = "Patente insuficiente! Esta viatura exige patente mínima %d (sua patente: %d).",
+    corporate_logs_unauthorized = "Apenas oficiais superiores a partir da patente %d podem consultar o Livro de Bordo.",
+    corporate_not_in_garage = "Você precisa estar próximo a uma garagem corporativa (polícia/gangue) para consultar o Livro de Bordo.",
+    corporate_vehicle_spawned = "Viatura corporativa [%s] retirada com sucesso. Registrado no Livro de Bordo.",
+    corporate_vehicle_stored = "Viatura corporativa [%s] devolvida com sucesso. Estado e combustível registrados no Livro de Bordo."
 }

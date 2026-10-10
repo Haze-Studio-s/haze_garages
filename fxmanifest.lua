@@ -22,7 +22,8 @@ client_scripts {
     'client/cl-parking-meters.lua',
     'client/cl-deformation.lua',
     'client/cl-tracker.lua',
-    'client/cl-valet.lua'
+    'client/cl-valet.lua',
+    'client/cl-corporate.lua'
 }
 
 server_scripts {
@@ -31,6 +32,7 @@ server_scripts {
     'server/sv-database.lua',
     'server/sv-garages-data.lua',
     'server/sv-creator.lua',
+    'server/sv-corporate.lua',
     'server/sv-garage.lua',
     'server/sv-street-parking.lua',
     'server/sv-parking-meters.lua',

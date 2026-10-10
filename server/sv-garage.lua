@@ -129,7 +129,48 @@ lib.callback.register("haze_garages:server:getUserVehicles", function(source, ga
         end
     end
 
-    return { success = true, vehicles = vehicles }
+    local isCorporate = (garageData.type == "job" or garageData.type == "gang")
+    local currentGrade = 0
+    if isCorporate then
+        currentGrade = (garageData.type == "job") and Haze.Server.GetPlayerJobGrade(src) or Haze.Server.GetPlayerGangGrade(src)
+    end
+    local canViewLogs = isCorporate and (currentGrade >= (Config.MinGradeToViewLogs or 2))
+
+    -- Injeta veículos corporativos da frota se for garagem de job ou gang
+    if isCorporate and garageData.corporateVehicles and #garageData.corporateVehicles > 0 then
+        for i, cVeh in ipairs(garageData.corporateVehicles) do
+            local minGrade = CorporateManager and CorporateManager.GetVehicleMinGrade(garageData, cVeh.model) or 0
+            local hasGrade = (currentGrade >= minGrade)
+            local corpPlate = string.upper(garageData.job or garageData.gang or "CORP") .. "-" .. string.format("%03d", i)
+
+            table.insert(vehicles, {
+                plate = corpPlate,
+                model = cVeh.model,
+                label = cVeh.label or cVeh.model,
+                nickname = cVeh.label or "",
+                state = 1,
+                garage = garageId,
+                statusLabel = hasGrade and string.format("Liberado (Patente %d+)", minGrade) or string.format("🔒 Patente Mínima: %d", minGrade),
+                isSpawnable = hasGrade,
+                spawnType = hasGrade and "fixed" or "locked_grade",
+                isCorporate = true,
+                minGrade = minGrade,
+                mods = {},
+                engine = 1000,
+                body = 1000,
+                fuel = 100
+            })
+        end
+    end
+
+    return { 
+        success = true, 
+        vehicles = vehicles, 
+        isCorporate = isCorporate, 
+        canViewLogs = canViewLogs, 
+        playerGrade = currentGrade,
+        garageLabel = garageData.label 
+    }
 end)
 
 
@@ -154,6 +195,61 @@ lib.callback.register("haze_garages:server:spawnVehicle", function(source, plate
 
     spawnReservations[cleanPlate] = { src = src, time = os.time() }
 
+    local isCorporateGarage = (garage.type == "job" or garage.type == "gang")
+    local currentGrade = isCorporateGarage and ((garage.type == "job") and Haze.Server.GetPlayerJobGrade(src) or Haze.Server.GetPlayerGangGrade(src)) or 0
+
+    -- 1. Verifica se é um veículo da frota corporativa
+    local isCorporateFleet = false
+    local corpModel = nil
+    local corpLabel = nil
+    if isCorporateGarage and garage.corporateVehicles and #garage.corporateVehicles > 0 then
+        for i, cVeh in ipairs(garage.corporateVehicles) do
+            local expectedPlate = string.upper(garage.job or garage.gang or "CORP") .. "-" .. string.format("%03d", i)
+            if Haze.Shared.CleanPlate(expectedPlate) == cleanPlate then
+                isCorporateFleet = true
+                corpModel = cVeh.model
+                corpLabel = cVeh.label or cVeh.model
+                local minGrade = CorporateManager and CorporateManager.GetVehicleMinGrade(garage, cVeh.model) or 0
+                if currentGrade < minGrade then
+                    releaseSpawnReservation(src, cleanPlate)
+                    return false, string.format("Patente insuficiente! Esta viatura exige patente mínima %d (sua patente atual: %d).", minGrade, currentGrade)
+                end
+                break
+            end
+        end
+    end
+
+    if isCorporateFleet then
+        -- Remove duplicata física se já existir no mundo
+        for _, veh in ipairs(GetAllVehicles()) do
+            if DoesEntityExist(veh) then
+                local p = GetVehicleNumberPlateText(veh)
+                if Haze.Shared.CleanPlate(p) == cleanPlate then
+                    DeleteEntity(veh)
+                    break
+                end
+            end
+        end
+
+        Haze.Server.GiveKey(src, cleanPlate)
+        releaseSpawnReservation(src, cleanPlate)
+
+        -- Grava no Livro de Bordo da corporação
+        if CorporateManager then
+            CorporateManager.LogAction(garageId, cleanPlate, corpLabel or corpModel, citizenid, Haze.Server.GetPlayerCharName(src), "retirada", 100, 1000, 1000)
+        end
+
+        return true, {
+            plate = cleanPlate,
+            model = corpModel,
+            mods = nil,
+            deformation = nil,
+            mechanical = nil,
+            spawnCoords = garage.spawnCoords
+        }
+    end
+
+    -- 2. Veículo Particular / Normal salvo no banco
     local vehRow = MySQL.single.await("SELECT * FROM player_vehicles WHERE plate = ? AND (citizenid = ? OR license = ?)", { cleanPlate, citizenid, citizenid })
     if not vehRow then
         releaseSpawnReservation(src, cleanPlate)
@@ -218,6 +314,11 @@ lib.callback.register("haze_garages:server:spawnVehicle", function(source, plate
     MySQL.query("UPDATE player_vehicles SET state = 0, garage = ? WHERE plate = ?", { garageId, cleanPlate })
     Haze.Server.GiveKey(src, cleanPlate)
 
+    -- Se for garagem corporativa, registra no Livro de Bordo
+    if isCorporateGarage and CorporateManager then
+        CorporateManager.LogAction(garageId, cleanPlate, vehRow.vehicle or vehRow.model, citizenid, Haze.Server.GetPlayerCharName(src), "retirada", 100, 1000, 1000)
+    end
+
     releaseSpawnReservation(src, cleanPlate)
     return true, {
         plate = cleanPlate,
@@ -241,15 +342,31 @@ lib.callback.register("haze_garages:server:storeVehicle", function(source, plate
     end
 
     local cleanPlate = Haze.Shared.CleanPlate(plate)
-    local isOwner = MySQL.scalar.await("SELECT 1 FROM player_vehicles WHERE plate = ? AND (citizenid = ? OR license = ?)", { cleanPlate, citizenid, citizenid })
-    if not isOwner then
-        return false, Locale.not_vehicle_owner
+    local isCorporateGarage = (garageData.type == "job" or garageData.type == "gang")
+
+    -- Se for viatura corporativa (não precisa estar no player_vehicles como dono pessoal)
+    local isCorporateFleet = false
+    if isCorporateGarage and garageData.corporateVehicles and #garageData.corporateVehicles > 0 then
+        for i, cVeh in ipairs(garageData.corporateVehicles) do
+            local expectedPlate = string.upper(garageData.job or garageData.gang or "CORP") .. "-" .. string.format("%03d", i)
+            if Haze.Shared.CleanPlate(expectedPlate) == cleanPlate then
+                isCorporateFleet = true
+                break
+            end
+        end
     end
 
-    if vehicleProps then
-        MySQL.query("UPDATE player_vehicles SET mods = ?, state = 1, garage = ? WHERE plate = ?", { json.encode(vehicleProps), garageId, cleanPlate })
-    else
-        MySQL.query("UPDATE player_vehicles SET state = 1, garage = ? WHERE plate = ?", { garageId, cleanPlate })
+    if not isCorporateFleet then
+        local isOwner = MySQL.scalar.await("SELECT 1 FROM player_vehicles WHERE plate = ? AND (citizenid = ? OR license = ?)", { cleanPlate, citizenid, citizenid })
+        if not isOwner then
+            return false, Locale.not_vehicle_owner
+        end
+
+        if vehicleProps then
+            MySQL.query("UPDATE player_vehicles SET mods = ?, state = 1, garage = ? WHERE plate = ?", { json.encode(vehicleProps), garageId, cleanPlate })
+        else
+            MySQL.query("UPDATE player_vehicles SET state = 1, garage = ? WHERE plate = ?", { garageId, cleanPlate })
+        end
     end
 
     MySQL.query("DELETE FROM haze_street_parking WHERE plate = ?", { cleanPlate })
@@ -263,6 +380,14 @@ lib.callback.register("haze_garages:server:storeVehicle", function(source, plate
             deformationData and json.encode(deformationData) or nil,
             mechanicalData and json.encode(mechanicalData) or nil
         })
+    end
+
+    -- Registra devolução no Livro de Bordo se for garagem corporativa
+    if isCorporateGarage and CorporateManager then
+        local f = vehicleProps and vehicleProps.fuelLevel or 100
+        local eng = vehicleProps and vehicleProps.engineHealth or 1000
+        local bdy = vehicleProps and vehicleProps.bodyHealth or 1000
+        CorporateManager.LogAction(garageId, cleanPlate, vehicleProps and (vehicleProps.model or "Viatura") or "Viatura", citizenid, Haze.Server.GetPlayerCharName(src), "devolucao", f, eng, bdy)
     end
 
     Haze.Server.RemoveKey(src, cleanPlate)

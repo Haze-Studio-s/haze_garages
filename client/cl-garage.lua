@@ -560,6 +560,8 @@ RegisterNetEvent("haze_garages:client:openGarageMenu", function(garageId)
             isSpawnable = v.isSpawnable,
             spawnType = v.spawnType,
             garage = v.garage,
+            isCorporate = v.isCorporate or false,
+            minGrade = v.minGrade or 0,
             engine = mods.engineHealth or v.engine or 1000,
             body = mods.bodyHealth or v.body or 1000,
             fuel = mods.fuelLevel or v.fuel or 100,
@@ -580,7 +582,10 @@ RegisterNetEvent("haze_garages:client:openGarageMenu", function(garageId)
         title = garage.label,
         garageId = garageId,
         vehicles = nuiVehicles,
-        hasTransferContract = hasTransferContract
+        hasTransferContract = hasTransferContract,
+        isCorporate = res.isCorporate or false,
+        canViewLogs = res.canViewLogs or false,
+        playerGrade = res.playerGrade or 0
     })
 end)
 

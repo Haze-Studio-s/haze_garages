@@ -315,10 +315,43 @@ O sistema conta com um assistente guiado completo para criar e gerenciar garagen
 
 ---
 
+### 🔹 Teste 16: Gestão Avançada para Corporações (Fase 2)
+1. **Restrição por Patente Mínima (minGrade)**:
+   - Defina seu emprego para recruta: `/setjob [seu_id] police 0`.
+   - Acesse a Garagem da Polícia (`police_main`).
+   - Observe que a viatura patrulha comum (`police`) aparece com botão verde `RETIRAR`.
+   - Observe que viaturas de alto escalão (`corvette` minGrade 3 e `riot` Bearcat minGrade 4) aparecem bloqueadas com botão cinza `PATENTE MÍNIMA (3+)` ou `PATENTE MÍNIMA (4+)`.
+   - Tente retirar a Corvette: a retirada é impedida autoritativamente pelo servidor com notificação: *"Patente insuficiente! Esta viatura exige patente mínima 3 (sua patente atual: 0)."*
+   - Promova-se a Capitão: `/setjob [seu_id] police 3`.
+   - Reabra a garagem: a Corvette agora aparece liberada com botão verde `RETIRAR`!
+2. **Livro de Bordo / Histórico de Uso (Logs da Corporação)**:
+   - Retire uma viatura liberada (ex: `police` ou `corvette`).
+   - No topo do menu da garagem, clique no botão esmeralda `📋 LIVRO DE BORDO` ou digite `/livrodebordo`.
+   - Verifique o modal Lation Emerald:
+     - Tabela exibe o registro em tempo real:
+       - **Data/Hora**: timestamp formatado.
+       - **Ação**: `🟢 Retirada`.
+       - **Condutor**: Seu nome de personagem + CitizenID.
+       - **Viatura/Placa**: Modelo e placa da viatura retirada.
+       - **Combustível**: Percentual inicial (100%).
+       - **Integridade**: Tag verde `Intacto (100% M / 100% L)`.
+3. **Auditoria de Devolução & Registro de Danos / Amassados**:
+   - Dirija a viatura, colida contra um poste para amassar a lataria (`bodyHealth < 800`) e gaste um pouco de combustível.
+   - Devolva a viatura na vaga da garagem com `[E]`.
+   - Abra o Livro de Bordo novamente:
+     - Uma nova linha com ação `🔴 Devolução` foi registrada automaticamente!
+     - A coluna de integridade agora exibe o selo em amarelo/laranja `Avariado` ou vermelho `Crítico` indicando com precisão a porcentagem de danos deixada pelo último condutor.
+     - A coluna de combustível reflete o nível exato com que o carro foi deixado no pátio.
+4. **Controle de Acesso Hierárquico aos Logs**:
+   - Mude sua patente para Recruta (`police 0`): o botão `📋 LIVRO DE BORDO` fica oculto e o comando `/livrodebordo` é bloqueado com notificação de patente insuficiente. Apenas Oficiais Superiores (patente 2+) têm permissão de auditoria.
+
+---
+
 ## 🔍 Resumo de Comandos Rápidos para Testes
 
 | Comando | Parâmetros | Descrição |
 | :--- | :--- | :--- |
+| `/livrodebordo` | `[garageId]` (opcional) | Abre o Livro de Bordo corporativo com histórico de uso, condutores e avarias |
 | `/valet` | `[placa]` (opcional) | Solicita manobrista NPC para trazer seu veículo da garagem pública mais próxima |
 | `/listarveiculos` | Nenhum | Abre o menu geral de veículos |
 | `/guardar` | Nenhum | Guarda o veículo na garagem física mais próxima |

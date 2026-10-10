@@ -91,7 +91,14 @@
     ],
     "pedModel": "s_m_y_cop_01",
     "blip": { "sprite": 60, "color": 38, "scale": 0.8 },
-    "price": 0
+    "price": 0,
+    "corporateVehicles": [
+      { "model": "police", "label": "Viatura Patrulha Cruiser", "minGrade": 0 },
+      { "model": "police2", "label": "Viatura Buffalo Interceptor", "minGrade": 1 },
+      { "model": "police3", "label": "Viatura SUV Interceptor", "minGrade": 2 },
+      { "model": "corvette", "label": "Corvette High Speed Interceptor", "minGrade": 3 },
+      { "model": "riot", "label": "Bearcat Blindado Tático", "minGrade": 4 }
+    ]
   },
   "vagos_base": {
     "label": "Garagem Facção Vagos",
@@ -115,7 +122,13 @@
     ],
     "pedModel": "g_m_y_salvagoon_01",
     "blip": { "sprite": 84, "color": 5, "scale": 0.8 },
-    "price": 0
+    "price": 0,
+    "corporateVehicles": [
+      { "model": "buccaneer", "label": "Buccaneer Lowrider", "minGrade": 0 },
+      { "model": "primo", "label": "Primo Sedan", "minGrade": 0 },
+      { "model": "chino", "label": "Chino Custom", "minGrade": 1 },
+      { "model": "voodoo", "label": "Voodoo Chopped", "minGrade": 2 }
+    ]
   },
   "impound_main": {
     "label": "Pátio de Apreensão Policial (Impound)",

@@ -77,6 +77,63 @@ function Haze.Server.GetPlayerGang(src)
     return "none"
 end
 
+function Haze.Server.GetPlayerJobGrade(src)
+    src = tonumber(src)
+    local player = Haze.Server.GetPlayer(src)
+    if player and player.PlayerData and player.PlayerData.job then
+        local job = player.PlayerData.job
+        if job.grade then
+            if type(job.grade) == "table" then
+                return tonumber(job.grade.level or job.grade.grade or 0) or 0
+            end
+            return tonumber(job.grade) or 0
+        end
+    end
+
+    if GetResourceState('es_extended') == 'started' then
+        local ok, ESX = pcall(function() return exports['es_extended']:getSharedObject() end)
+        if ok and ESX then
+            local xPlayer = ESX.GetPlayerFromId(src)
+            return xPlayer and xPlayer.job and tonumber(xPlayer.job.grade) or 0
+        end
+    end
+    return 0
+end
+
+function Haze.Server.GetPlayerGangGrade(src)
+    src = tonumber(src)
+    local player = Haze.Server.GetPlayer(src)
+    if player and player.PlayerData and player.PlayerData.gang then
+        local gang = player.PlayerData.gang
+        if gang.grade then
+            if type(gang.grade) == "table" then
+                return tonumber(gang.grade.level or gang.grade.grade or 0) or 0
+            end
+            return tonumber(gang.grade) or 0
+        end
+    end
+    return 0
+end
+
+function Haze.Server.GetPlayerCharName(src)
+    src = tonumber(src)
+    local player = Haze.Server.GetPlayer(src)
+    if player and player.PlayerData and player.PlayerData.charinfo then
+        local fn = player.PlayerData.charinfo.firstname or ""
+        local ln = player.PlayerData.charinfo.lastname or ""
+        local full = (fn .. " " .. ln):gsub("^%s*(.-)%s*$", "%1")
+        if full ~= "" then return full end
+    end
+    if GetResourceState('es_extended') == 'started' then
+        local ok, ESX = pcall(function() return exports['es_extended']:getSharedObject() end)
+        if ok and ESX then
+            local xPlayer = ESX.GetPlayerFromId(src)
+            if xPlayer and xPlayer.getName then return xPlayer.getName() end
+        end
+    end
+    return GetPlayerName(src) or "Desconhecido"
+end
+
 function Haze.Server.IsPlayerOnlineByIdentifier(citizenid)
     if not citizenid then return false end
 

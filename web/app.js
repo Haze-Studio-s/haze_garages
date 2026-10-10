@@ -17,6 +17,17 @@ const phonePreviewModal = document.getElementById('phone-preview-modal');
 const closePhoneBtn = document.getElementById('close-phone-btn');
 const phoneIframe = document.getElementById('phone-iframe');
 
+// Corporate Logs Elements (Fase 2)
+const corporateLogsBtn = document.getElementById('corporate-logs-btn');
+const corporateLogsModal = document.getElementById('corporate-logs-modal');
+const closeLogsBtn = document.getElementById('close-logs-btn');
+const closeLogsFooterBtn = document.getElementById('close-logs-footer-btn');
+const logsSearchInput = document.getElementById('logs-search-input');
+const logsTbody = document.getElementById('logs-tbody');
+const noLogsMsg = document.getElementById('no-logs-msg');
+const logsModalTitle = document.getElementById('logs-modal-title');
+let currentGarageLogs = [];
+
 let currentMode = 'garage'; // 'garage' or 'list'
 let currentGarageId = null;
 let allVehicles = [];
@@ -27,6 +38,7 @@ function closeNUI() {
     app.classList.add('hidden');
     nicknameModal.classList.add('hidden');
     if (phonePreviewModal) phonePreviewModal.classList.add('hidden');
+    if (corporateLogsModal) corporateLogsModal.classList.add('hidden');
     fetch(`https://${GetParentResourceName()}/close`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -34,13 +46,23 @@ function closeNUI() {
     });
 }
 
+function closeLogsModal() {
+    if (corporateLogsModal) {
+        corporateLogsModal.classList.add('hidden');
+    }
+}
+
 closeBtn.addEventListener('click', closeNUI);
 if (closePhoneBtn) closePhoneBtn.addEventListener('click', closeNUI);
+if (closeLogsBtn) closeLogsBtn.addEventListener('click', closeLogsModal);
+if (closeLogsFooterBtn) closeLogsFooterBtn.addEventListener('click', closeLogsModal);
 
 window.addEventListener('keyup', (e) => {
     if (e.key === 'Escape') {
         if (!nicknameModal.classList.contains('hidden')) {
             nicknameModal.classList.add('hidden');
+        } else if (corporateLogsModal && !corporateLogsModal.classList.contains('hidden')) {
+            closeLogsModal();
         } else {
             closeNUI();
         }
@@ -185,6 +207,8 @@ function renderCards(vehicles) {
                 `;
             } else if (veh.spawnType === 'impound') {
                 garageActionBtn = `<button class="btn-spawn" disabled><i class="fas fa-lock"></i> NO IMPOUND</button>`;
+            } else if (veh.spawnType === 'locked_grade') {
+                garageActionBtn = `<button class="btn-spawn" disabled style="opacity: 0.65; cursor: not-allowed; background: #2a2c33; color: #9ca3af; border-color: rgba(239, 68, 68, 0.4);"><i class="fas fa-lock"></i> PATENTE INSUFICIENTE (${veh.minGrade}+)</button>`;
             } else {
                 garageActionBtn = `<button class="btn-spawn" disabled><i class="fas fa-lock"></i> INDISPONÍVEL</button>`;
             }
@@ -363,6 +387,109 @@ function renderCards(vehicles) {
     });
 }
 
+function renderLogsTable(logs) {
+    if (!logsTbody) return;
+    logsTbody.innerHTML = '';
+
+    if (!logs || logs.length === 0) {
+        if (noLogsMsg) noLogsMsg.classList.remove('hidden');
+        return;
+    }
+
+    if (noLogsMsg) noLogsMsg.classList.add('hidden');
+
+    logs.forEach(log => {
+        const tr = document.createElement('tr');
+
+        const isRetirada = log.action === 'retirada';
+        const actionHtml = isRetirada 
+            ? `<span class="badge-action badge-action-retirada"><i class="fas fa-arrow-up"></i> Retirada</span>`
+            : `<span class="badge-action badge-action-devolucao"><i class="fas fa-arrow-down"></i> Devolução</span>`;
+
+        const fuelVal = Math.min(100, Math.max(0, Math.round(log.fuel || 100)));
+        const fuelHtml = `
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <i class="fas fa-gas-pump" style="color: ${fuelVal < 25 ? '#ef4444' : '#10b981'}; font-size: 0.75rem;"></i>
+                <span style="font-weight: 600;">${fuelVal}%</span>
+            </div>
+        `;
+
+        const eng = Math.round(log.engine_health || 1000);
+        const bdy = Math.round(log.body_health || 1000);
+
+        let healthCls = 'health-intact';
+        let healthLabel = 'Intacto';
+        if (eng < 650 || bdy < 650) {
+            healthCls = 'health-critical';
+            healthLabel = 'Crítico';
+        } else if (eng < 880 || bdy < 880) {
+            healthCls = 'health-damaged';
+            healthLabel = 'Avariado';
+        }
+
+        const healthHtml = `
+            <span class="health-badge ${healthCls}">
+                <i class="fas fa-shield"></i> ${healthLabel} (${Math.round((eng / 1000) * 100)}% M / ${Math.round((bdy / 1000) * 100)}% L)
+            </span>
+        `;
+
+        tr.innerHTML = `
+            <td style="color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem;">${log.formatted_date || 'Recente'}</td>
+            <td>${actionHtml}</td>
+            <td>
+                <div class="condutor-info">
+                    <span class="condutor-name">${log.player_name || 'Agente'}</span>
+                    <span class="condutor-id">${log.citizenid || 'N/A'}</span>
+                </div>
+            </td>
+            <td>
+                <span style="font-weight: 600;">${log.model || 'Viatura'}</span><br>
+                <span class="plate-badge-sm">${log.plate}</span>
+            </td>
+            <td>${fuelHtml}</td>
+            <td>${healthHtml}</td>
+        `;
+
+        logsTbody.appendChild(tr);
+    });
+}
+
+if (corporateLogsBtn) {
+    corporateLogsBtn.addEventListener('click', () => {
+        if (!currentGarageId) return;
+        fetch(`https://${GetParentResourceName()}/fetchGarageLogs`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ garageId: currentGarageId })
+        }).then(res => res.json()).then(resp => {
+            if (resp && resp.success) {
+                currentGarageLogs = resp.logs || [];
+                if (logsModalTitle) logsModalTitle.innerText = `Livro de Bordo — ${resp.garageLabel || 'Corporação'}`;
+                renderLogsTable(currentGarageLogs);
+                if (corporateLogsModal) corporateLogsModal.classList.remove('hidden');
+            }
+        });
+    });
+}
+
+if (logsSearchInput) {
+    logsSearchInput.addEventListener('input', (e) => {
+        const q = e.target.value.toLowerCase().trim();
+        if (!q) {
+            renderLogsTable(currentGarageLogs);
+            return;
+        }
+        const filtered = currentGarageLogs.filter(l => {
+            const name = (l.player_name || '').toLowerCase();
+            const cid = (l.citizenid || '').toLowerCase();
+            const plate = (l.plate || '').toLowerCase();
+            const model = (l.model || '').toLowerCase();
+            return name.includes(q) || cid.includes(q) || plate.includes(q) || model.includes(q);
+        });
+        renderLogsTable(filtered);
+    });
+}
+
 window.addEventListener('message', (event) => {
     const data = event.data;
     if (data.action === 'openGarage') {
@@ -373,8 +500,18 @@ window.addEventListener('message', (event) => {
         searchInput.value = '';
         allVehicles = data.vehicles || [];
         renderCards(allVehicles);
+
+        if (corporateLogsBtn) {
+            if (data.canViewLogs) {
+                corporateLogsBtn.classList.remove('hidden');
+            } else {
+                corporateLogsBtn.classList.add('hidden');
+            }
+        }
+
         if (modalContainer) modalContainer.classList.remove('hidden');
         if (phonePreviewModal) phonePreviewModal.classList.add('hidden');
+        if (corporateLogsModal) corporateLogsModal.classList.add('hidden');
         app.classList.remove('hidden');
     } else if (data.action === 'openVehicleList') {
         currentMode = 'list';
@@ -384,11 +521,15 @@ window.addEventListener('message', (event) => {
         searchInput.value = '';
         allVehicles = data.vehicles || [];
         renderCards(allVehicles);
+
+        if (corporateLogsBtn) corporateLogsBtn.classList.add('hidden');
         if (modalContainer) modalContainer.classList.remove('hidden');
         if (phonePreviewModal) phonePreviewModal.classList.add('hidden');
+        if (corporateLogsModal) corporateLogsModal.classList.add('hidden');
         app.classList.remove('hidden');
     } else if (data.action === 'openPhoneNUI') {
         if (modalContainer) modalContainer.classList.add('hidden');
+        if (corporateLogsModal) corporateLogsModal.classList.add('hidden');
         if (phonePreviewModal) {
             phonePreviewModal.classList.remove('hidden');
             if (phoneIframe && phoneIframe.contentWindow) {
@@ -396,9 +537,18 @@ window.addEventListener('message', (event) => {
             }
         }
         app.classList.remove('hidden');
+    } else if (data.action === 'openCorporateLogs') {
+        currentGarageLogs = data.logs || [];
+        if (logsModalTitle) logsModalTitle.innerText = `Livro de Bordo — ${data.garageLabel || 'Corporação'}`;
+        renderLogsTable(currentGarageLogs);
+        if (modalContainer) modalContainer.classList.add('hidden');
+        if (phonePreviewModal) phonePreviewModal.classList.add('hidden');
+        if (corporateLogsModal) corporateLogsModal.classList.remove('hidden');
+        app.classList.remove('hidden');
     } else if (data.action === 'closeGarage') {
         app.classList.add('hidden');
         nicknameModal.classList.add('hidden');
         if (phonePreviewModal) phonePreviewModal.classList.add('hidden');
+        if (corporateLogsModal) corporateLogsModal.classList.add('hidden');
     }
 });

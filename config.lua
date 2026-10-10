@@ -68,6 +68,42 @@ Config.ValetTimeoutSeconds = 180 -- Timeout de segurança caso o trânsito tranq
 Config.ValetCommand = "valet" -- Comando in-game para chamar o manobrista
 
 -- =================================================================================
+-- Gestão Avançada para Corporações (Fase 2)
+-- Registro de Bordo (Logs da Corporação) & Restrição por Patente Mínima (minGrade)
+-- =================================================================================
+Config.LogCorporateGarages = true -- Habilita registro de histórico de uso em garagens job e gang
+Config.MinGradeToViewLogs = 2 -- Patente mínima necessária para consultar o Livro de Bordo (0 = todos)
+Config.CorporateLogCommand = "livrodebordo" -- Comando in-game para consultar o histórico
+
+-- Tabela de patentes mínimas padrão por modelo para jobs e facções
+Config.CorporateMinGrades = {
+    -- Departamento de Polícia (LSPD)
+    police = {
+        ["police"] = 0,   -- Viatura Patrulha Cruiser (Recruta+)
+        ["police2"] = 1,  -- Viatura Interceptor Buffalo (Oficial+)
+        ["police3"] = 2,  -- Viatura SUV Interceptor (Sargento+)
+        ["corvette"] = 3, -- Corvette High Speed Interceptor (Tenente/Capitão+)
+        ["riot"] = 4,     -- Bearcat Blindado Tático (Comando+)
+        ["polmav"] = 3    -- Helicóptero Águia Policial (Piloto Certificado 3+)
+    },
+    -- Departamento Médico / SAMU
+    ambulance = {
+        ["ambulance"] = 0,
+        ["emsnspeedo"] = 1,
+        ["polmav"] = 2
+    },
+    -- Gangues / Facções (ex: Vagos)
+    vagos = {
+        ["buccaneer"] = 0,
+        ["primo"] = 0,
+        ["chino"] = 1,
+        ["manana"] = 1,
+        ["tornado"] = 2,
+        ["voodoo"] = 3
+    }
+}
+
+-- =================================================================================
 -- Garagens Fixas (Arquivo Exclusivo e Dedicado)
 -- As garagens foram completamente desacopladas deste config.lua e ficam
 -- armazenadas exclusivamente no arquivo dedicado:
