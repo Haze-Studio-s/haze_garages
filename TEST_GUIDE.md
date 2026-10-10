@@ -425,6 +425,30 @@ O sistema conta com um assistente guiado completo para criar e gerenciar garagen
 
 ---
 
+### 🔹 Teste 20: Odômetro & Milhagem Real Percorrida (`granolla_mechanic`)
+1. **Exibição no Card da Garagem (NUI Emerald)**:
+   - Abra qualquer garagem no mapa (`[E]` no atendente ou `/listarveiculos`).
+   - Observe o card de cada veículo:
+     - Na grade de estatísticas (`stats-grid`), a 4ª coluna agora exibe **`Milhagem`** com ícone de estrada/odômetro.
+     - O valor acumulado é exibido com precisão de 1 casa decimal e sufixo de milhas em JetBrains Mono (ex: `1.450,2 mi`).
+     - A barra de progresso preenche com gradiente esmeralda neon (`#10b981` → `#6afe87`).
+     - Ao passar o mouse por cima, o tooltip informa: *"Odômetro: X mi (granolla_mechanic)"*.
+2. **Exibição no App do Celular (`vp_phone` / `/garagemapp`)**:
+   - Abra o aplicativo de garagens no celular digitando `/garagemapp`.
+   - Na linha de mini-estatísticas de cada card, observe as 4 colunas perfeitamente alinhadas:
+     - **Motor**, **Lataria**, **Gasolina** e **Milhagem** (com o valor em verde neon e mini-barra de progresso).
+3. **Cálculo & Incremento em Tempo Real**:
+   - Retire um veículo próprio da garagem.
+   - O sistema do `haze_garages` injeta automaticamente o valor do banco no state bag `Entity(veh).state.vehicleMileage`.
+   - Dirija o veículo pela cidade por alguns quilômetros.
+   - O loop do `granolla_mechanic` calcula o deslocamento contínuo `(dist / 1609.344) * distanceScale` e atualiza a milhagem.
+4. **Persistência ao Guardar e Reabrir**:
+   - Guarde o veículo de volta na garagem (`[E]` na vaga ou `/guardar`).
+   - Reabra o menu da garagem:
+     - A milhagem foi salva no banco (`granolla_vehicle_wear`) e o novo valor incrementado é exibido imediatamente no card!
+
+---
+
 ## 🔍 Resumo de Comandos Rápidos para Testes
 
 | Comando | Parâmetros | Descrição |

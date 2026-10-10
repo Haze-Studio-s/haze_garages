@@ -44,9 +44,11 @@
 
 ---
 
-### 4. Interface NUI Lation Emerald & Integração Mecânica
+### 4. Interface NUI Lation Emerald & Odômetro Integrado (`granolla_mechanic`)
 - **Design System:** Padrão visual moderno Lation Emerald Edition com painel lateral verde neon (`#10b981`), tipografia limpa (Inter + JetBrains Mono) e animações suaves.
-- **Integração `granolla_mechanic`:** Exibe a saúde em tempo real de Motor, Lataria, Tanque e Desgaste de Peças (suspensão, freio, embreagem, injetores) direto nas barras de status da NUI.
+- **Odômetro Real & Milhagem Percorrida:** Integração direta com a tabela `granolla_vehicle_wear` e os exports do `granolla_mechanic`, exibindo a milhagem percorrida no card do veículo (`1.450,2 mi`) com barra de progresso em gradiente esmeralda neon.
+- **Sincronização de State Bag:** Ao retirar o carro da garagem, o `haze_garages` injeta o valor no state bag `Entity(veh).state.vehicleMileage`, permitindo que o HUD de odômetro do mecânico continue a contagem sem perder dados.
+- **Integração Mecânica Completa:** Exibe a saúde em tempo real de Motor, Lataria, Tanque e Desgaste de Peças (suspensão, freio, embreagem, injetores) direto nas barras de status da NUI e no App do Celular (`vp_phone` / `/garagemapp`).
 - **Deformação Física:** Armazena e restaura a deformação real dos vértices da carcaça do veículo ao retirar da garagem.
 
 ---
