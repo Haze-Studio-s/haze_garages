@@ -38,6 +38,7 @@ lib.callback.register("haze_garages:server:getUserVehicles", function(source, ga
     end
 
     local isImpound = garageData.type == "impound"
+    local isInsurance = garageData.type == "insurance"
 
     local query = [[
         SELECT pv.*, 
@@ -96,9 +97,37 @@ lib.callback.register("haze_garages:server:getUserVehicles", function(source, ga
                     fuel = mods.fuelLevel or 100
                 })
             end
+        elseif isInsurance then
+            if row.state == 3 then
+                statusLabel = "Sinistrado (Mors Mutual)"
+                isSpawnable = true
+                spawnType = "insurance"
+                table.insert(vehicles, {
+                    plate = row.plate,
+                    model = row.vehicle or row.model or "Desconhecido",
+                    nickname = row.nickname or "",
+                    state = row.state,
+                    garage = row.garage,
+                    statusLabel = statusLabel,
+                    isSpawnable = isSpawnable,
+                    spawnType = spawnType,
+                    isCoOwner = isCoOwner,
+                    isOwner = isOwner,
+                    coownerName = row.coowner_name or "",
+                    hasCoOwner = (row.coowner_citizenid ~= nil),
+                    mods = mods,
+                    engine = mods.engineHealth or 1000,
+                    body = mods.bodyHealth or 1000,
+                    fuel = mods.fuelLevel or 100
+                })
+            end
         else
             -- Garagem Normal (Pública, Job ou Gang)
-            if row.state == 2 then
+            if row.state == 3 then
+                statusLabel = "Sinistrado (Mors Mutual)"
+                isSpawnable = false
+                spawnType = "insurance"
+            elseif row.state == 2 then
                 statusLabel = "Apreendido (Impound)"
                 isSpawnable = false
                 spawnType = "impound"
@@ -292,6 +321,12 @@ lib.callback.register("haze_garages:server:spawnVehicle", function(source, plate
     if vehRow.state == 2 and garage.type ~= "impound" then
         releaseSpawnReservation(src, cleanPlate)
         return false, "Este veículo está apreendido pela polícia! Dirija-se ao Pátio de Apreensão (Impound)."
+    end
+
+    -- Se o veículo estiver sinistrado e a garagem NÃO for Mors Mutual
+    if vehRow.state == 3 and garage.type ~= "insurance" then
+        releaseSpawnReservation(src, cleanPlate)
+        return false, "Este veículo sofreu perda total e está na Seguradora Mors Mutual! Digite /seguro para acionar o resgate da apólice."
     end
 
     -- Se for garagem de impound, processa liberação e multa

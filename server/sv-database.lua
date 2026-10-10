@@ -149,6 +149,22 @@ MySQL.ready(function()
         MySQL.query.await("ALTER TABLE haze_vehicle_coowners CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;")
     end)
 
+    MySQL.query([[
+        CREATE TABLE IF NOT EXISTS haze_vehicle_insurance (
+            plate VARCHAR(32) NOT NULL PRIMARY KEY,
+            deductible_fee INT DEFAULT 2500,
+            claimed_at TIMESTAMP NULL DEFAULT NULL,
+            ready_at TIMESTAMP NULL DEFAULT NULL,
+            status VARCHAR(20) DEFAULT 'destroyed',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_insurance_status (status)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ]])
+
+    pcall(function()
+        MySQL.query.await("ALTER TABLE haze_vehicle_insurance CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;")
+    end)
+
     print("^2[Haze Garages]^7 Tabelas de banco de dados inicializadas e verificadas com sucesso.")
 end)
 

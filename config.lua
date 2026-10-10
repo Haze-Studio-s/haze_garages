@@ -131,6 +131,20 @@ Config.TrackerItem = "vehicle_tracker"
 Config.JammerItem = "tracker_jammer"
 Config.JammerDurationMinutes = 30
 
+-- =================================================================================
+-- Seguradora de Veículos - Mors Mutual Insurance (Fase 4)
+-- Gestão de veículos destruídos/sinistrados com franquia e carência de espera.
+-- =================================================================================
+Config.Insurance = {
+    Enabled = true,
+    BaseDeductible = 2500, -- Franquia padrão em dólares ($2.500)
+    DeductiblePercent = 0.05, -- 5% do valor base do veículo caso haja tabela
+    ClaimWaitMinutes = 15, -- Carência de espera do guincho da seguradora (15 minutos)
+    ExpressFee = 1000, -- Taxa adicional para liberação expressa imediata sem carência ($1.000)
+    Command = "seguro", -- Comando in-game para gerenciar sinistros
+    LotGarageId = "mors_mutual" -- ID da garagem cadastrada em data/garages.json
+}
+
 -- Configurações visuais
 Config.DrawMarkerDistance = 20.0
 

@@ -61,5 +61,14 @@ Locales['pt-BR'] = {
     coowner_received_success = "Você foi autorizado como condutor do veículo placa %s por %s! Agora você pode retirá-lo da garagem a qualquer momento.",
     coowner_removed_success = "Condutor autorizado removido com sucesso.",
     coowner_dialog_title = "👥 Condutor Autorizado",
-    coowner_dialog_desc = "Permite que esta pessoa retire e guarde o veículo (%s) na garagem a qualquer momento. Taxa única: %s%s"
+    coowner_dialog_desc = "Permite que esta pessoa retire e guarde o veículo (%s) na garagem a qualquer momento. Taxa única: %s%s",
+
+    -- Seguradora Mors Mutual (Fase 4)
+    insurance_destroyed_alert = "Seu veículo [%s] sofreu perda total! Uma ocorrência de sinistro foi aberta na Seguradora Mors Mutual.",
+    insurance_claimed_pending = "Franquia de %s%s paga com sucesso! Seu veículo [%s] está em reparo pela Seguradora (Carência: %d minutos).",
+    insurance_claimed_express = "Franquia e Guincho Expresso pagos (%s%s)! O veículo [%s] foi restaurado e está pronto para retirada.",
+    insurance_express_ready = "Guincho Expresso acionado com sucesso (%s%s)! Seu veículo [%s] está liberado para retirada.",
+    insurance_vehicle_retrieved = "Veículo [%s] restaurado com sucesso! Ele foi transferido para a %s.",
+    insurance_lot_label = "Pátio Seguradora Mors Mutual",
+    insurance_not_ready = "O veículo [%s] ainda está em reparo pela seguradora. Faltam %d minutos."
 }

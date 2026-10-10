@@ -69,6 +69,8 @@ function renderVehicles(vehicles) {
             statusClass = 'status-out';
         } else if (veh.spawnType === 'impound') {
             statusClass = 'status-impound';
+        } else if (veh.spawnType === 'insurance' || veh.state === 3) {
+            statusClass = 'status-insurance';
         }
 
         // Tracker Tag Logic
@@ -84,6 +86,25 @@ function renderVehicles(vehicles) {
         }
 
         const nickHtml = veh.nickname ? `<span class="nick-tag"><i class="fas fa-tag"></i> ${veh.nickname}</span>` : '';
+
+        let actionsHtml = '';
+        if (veh.spawnType === 'insurance' || veh.state === 3) {
+            actionsHtml = `
+                <button class="action-btn btn-insurance" data-plate="${veh.plate}" style="background-color: rgba(220, 38, 38, 0.85); color: #fff; width: 100%; border: 1px solid #ef4444;">
+                    <i class="fas fa-shield-halved"></i> Acionar Mors Mutual
+                </button>
+            `;
+        } else {
+            actionsHtml = `
+                <button class="action-btn btn-gps" ${!canTrack ? 'disabled' : ''} title="${canTrack ? 'Marcar localização no mapa' : 'GPS indisponível'}">
+                    <i class="fas fa-location-dot"></i> Rastrear
+                </button>
+                <button class="action-btn btn-valet" data-plate="${veh.plate}">
+                    <i class="fas fa-key"></i> Valet
+                </button>
+                ${veh.isOwner !== false ? `<button class="action-btn btn-coowner" data-plate="${veh.plate}" title="Gerenciar Condutor Autorizado ($1.000)"><i class="fas fa-user-friends"></i> Condutor</button>` : ''}
+            `;
+        }
 
         card.innerHTML = `
             <div class="card-header-row">
@@ -116,15 +137,16 @@ function renderVehicles(vehicles) {
             </div>
 
             <div class="card-actions-row">
-                <button class="action-btn btn-gps" ${!canTrack ? 'disabled' : ''} title="${canTrack ? 'Marcar localização no mapa' : 'GPS indisponível'}">
-                    <i class="fas fa-location-dot"></i> Rastrear
-                </button>
-                <button class="action-btn btn-valet" data-plate="${veh.plate}">
-                    <i class="fas fa-key"></i> Valet
-                </button>
-                ${veh.isOwner !== false ? `<button class="action-btn btn-coowner" data-plate="${veh.plate}" title="Gerenciar Condutor Autorizado ($1.000)"><i class="fas fa-user-friends"></i> Condutor</button>` : ''}
+                ${actionsHtml}
             </div>
         `;
+
+        const insuranceBtn = card.querySelector('.btn-insurance');
+        if (insuranceBtn) {
+            insuranceBtn.addEventListener('click', () => {
+                fetchNui('openInsuranceManager', { plate: veh.plate });
+            });
+        }
 
         const gpsBtn = card.querySelector('.btn-gps');
         if (gpsBtn && canTrack) {

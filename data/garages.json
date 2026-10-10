@@ -196,5 +196,28 @@
     "pedModel": "a_m_y_business_01",
     "blip": { "sprite": 357, "color": 3, "scale": 0.75 },
     "price": 0
+  },
+  "mors_mutual": {
+    "label": "Seguradora Mors Mutual (Sinistros)",
+    "type": "insurance",
+    "category": "car",
+    "coords": { "x": -834.8, "y": -2354.2, "z": 14.5, "w": 60.0 },
+    "dropZone": {
+      "points": [
+        { "x": -845.0, "y": -2345.0, "z": 14.5 },
+        { "x": -825.0, "y": -2345.0, "z": 14.5 },
+        { "x": -825.0, "y": -2365.0, "z": 14.5 },
+        { "x": -845.0, "y": -2365.0, "z": 14.5 }
+      ],
+      "thickness": 6.0
+    },
+    "spawnCoords": [
+      { "x": -830.5, "y": -2348.2, "z": 14.5, "w": 240.0 },
+      { "x": -833.8, "y": -2352.5, "z": 14.5, "w": 240.0 },
+      { "x": -837.2, "y": -2356.8, "z": 14.5, "w": 240.0 }
+    ],
+    "pedModel": "a_m_y_smartcaspat_01",
+    "blip": { "sprite": 402, "color": 2, "scale": 0.8 },
+    "price": 0
   }
 }

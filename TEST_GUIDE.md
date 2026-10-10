@@ -369,10 +369,35 @@ O sistema conta com um assistente guiado completo para criar e gerenciar garagen
 
 ---
 
+### 🔹 Teste 18: Seguradora de Veículos Sinistrados (Mors Mutual - Fase 4)
+1. **Detecção Autoritativa de Sinistro / Perda Total**:
+   - Entre em um veículo próprio e provoque sua destruição (explodindo-o ou afundando-o na água do mar).
+   - O sistema detecta a destruição, limpa o veículo da rua e marca o estado autoritativo como **`state = 3` (Sinistrado na Mors Mutual)**.
+   - Notificação em tela: *"Seu veículo [PLACA] sofreu perda total! Uma ocorrência de sinistro foi aberta na Seguradora Mors Mutual."*
+2. **Bloqueio em Garagens Comuns e Valet**:
+   - Tente retirar o veículo destruído em qualquer garagem pública comum ou solicitar Valet:
+     - Bloqueio imediato com aviso: *"Este veículo sofreu perda total e está na Seguradora Mors Mutual! Digite /seguro para acionar o resgate da apólice."*
+3. **Acionamento de Sinistro & Franquia (Normal vs. Expresso)**:
+   - Abra o App do Celular (`/garagemapp`), digite `/seguro` ou vá até o **Pátio da Seguradora Mors Mutual** (`coords: -834.8, -2354.2, 14.5`).
+   - O veículo exibe o selo vermelho **`🚨 Sinistrado (Mors Mutual)`** com botão **`MORS MUTUAL`**.
+   - Ao selecionar o veículo, você tem duas opções:
+     - **⏱️ Acionamento Normal ($2.500)**: Debita a franquia base da sua conta bancária e coloca o veículo em reparo com **carência de 15 minutos**.
+     - **⚡ Acionamento Expresso ($3.500)**: Paga a franquia + taxa de guincho emergencial de $1.000, restaurando e liberando o veículo **imediatamente sem carência**!
+4. **Aceleração de Guincho em Andamento**:
+   - Se você acionou a apólice normal e o carro está em carência:
+   - Reabra o menu `/seguro`: Ele exibe o tempo restante em minutos e oferece o botão **`⚡ Liberar Imediatamente ($1.000)`** para converter em expresso a qualquer momento.
+5. **Retirada do Veículo 100% Restaurado**:
+   - Quando o tempo de carência acaba (ou na taxa expressa), o status muda para **`🟢 Pronto para Retirada`**.
+   - Clique em **`Retirar Veículo`**:
+     - O veículo sai com lataria polida, motor a 1000.0, combustível a 100% e todas as deformações limpas de volta à vida no pátio da Mors Mutual!
+
+---
+
 ## 🔍 Resumo de Comandos Rápidos para Testes
 
 | Comando | Parâmetros | Descrição |
 | :--- | :--- | :--- |
+| `/seguro` | Nenhum | Abre o painel de sinistros da Seguradora Mors Mutual (Franquia & Expresso) |
 | `/condutor` | `[placa]` (opcional) | Gerencia o condutor autorizado/coproprietário do veículo ($1.000) |
 | `/livrodebordo` | `[garageId]` (opcional) | Abre o Livro de Bordo corporativo com histórico de uso, condutores e avarias |
 | `/valet` | `[placa]` (opcional) | Solicita manobrista NPC para trazer seu veículo da garagem pública mais próxima |

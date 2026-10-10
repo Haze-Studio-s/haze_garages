@@ -206,6 +206,10 @@ lib.callback.register("haze_garages:server:getPhoneVehicles", function(source)
             statusLabel = "Apreendido / Impound"
             isSpawnable = false
             spawnType = "impound"
+        elseif row.state == 3 then
+            statusLabel = "🚨 Sinistrado (Mors Mutual)"
+            isSpawnable = false
+            spawnType = "insurance"
         elseif row.state == 0 then
             statusLabel = "Na Rua / Em Uso"
             isSpawnable = false

@@ -24,7 +24,8 @@ client_scripts {
     'client/cl-tracker.lua',
     'client/cl-valet.lua',
     'client/cl-corporate.lua',
-    'client/cl-coowner.lua'
+    'client/cl-coowner.lua',
+    'client/cl-insurance.lua'
 }
 
 server_scripts {
@@ -42,7 +43,8 @@ server_scripts {
     'server/sv-tracker.lua',
     'server/sv-impound.lua',
     'server/sv-valet.lua',
-    'server/sv-coowner.lua'
+    'server/sv-coowner.lua',
+    'server/sv-insurance.lua'
 }
 
 ui_page 'web/index.html'

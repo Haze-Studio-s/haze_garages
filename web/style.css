@@ -363,6 +363,22 @@ body {
     border: 1px solid rgba(245, 158, 11, 0.35);
 }
 
+.status-insurance {
+    background-color: rgba(220, 38, 38, 0.2);
+    color: #f87171;
+    border: 1px solid rgba(220, 38, 38, 0.45);
+}
+
+.btn-insurance-action {
+    background-color: rgba(220, 38, 38, 0.8) !important;
+    color: #fff !important;
+    border: 1px solid #ef4444 !important;
+}
+
+.btn-insurance-action:hover {
+    background-color: #ef4444 !important;
+}
+
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);

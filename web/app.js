@@ -161,6 +161,8 @@ function renderCards(vehicles) {
             statusBadgeClass = 'status-out';
         } else if (veh.spawnType === 'impound') {
             statusBadgeClass = 'status-impound';
+        } else if (veh.spawnType === 'insurance') {
+            statusBadgeClass = 'status-insurance';
         }
 
         const isListMode = currentMode === 'list';
@@ -187,6 +189,8 @@ function renderCards(vehicles) {
             } else if (veh.spawnType === 'impound') {
                 trackBtnHtml = `<button class="btn-icon btn-track-garage" data-garage="impound_main" title="Marcar Pátio Impound no GPS"><i class="fas fa-truck-pickup"></i></button>`;
                 mainActionBtnHtml = `<button class="btn-spawn btn-track-garage" data-garage="impound_main"><i class="fas fa-truck-pickup"></i> IR AO IMPOUND</button>`;
+            } else if (veh.spawnType === 'insurance') {
+                mainActionBtnHtml = `<button class="btn-spawn btn-insurance-action btn-open-insurance" data-plate="${veh.plate}"><i class="fas fa-shield-halved"></i> MORS MUTUAL</button>`;
             } else {
                 mainActionBtnHtml = `<button class="btn-spawn" disabled><i class="fas fa-car-side"></i> EM USO NA RUA</button>`;
             }
@@ -200,7 +204,9 @@ function renderCards(vehicles) {
             `;
         } else {
             let garageActionBtn = '';
-            if (veh.isSpawnable) {
+            if (veh.spawnType === 'insurance' || currentGarageId === 'mors_mutual') {
+                garageActionBtn = `<button class="btn-spawn btn-insurance-action btn-open-insurance" data-plate="${veh.plate}"><i class="fas fa-shield-halved"></i> MORS MUTUAL</button>`;
+            } else if (veh.isSpawnable) {
                 garageActionBtn = `<button class="btn-spawn btn-garage-spawn" data-plate="${veh.plate}"><i class="fas fa-car-side"></i> RETIRAR</button>`;
             } else if (veh.spawnType === 'out') {
                 garageActionBtn = `<button class="btn-spawn" disabled><i class="fas fa-car-side"></i> JÁ FORA (EM USO)</button>`;
@@ -269,6 +275,18 @@ function renderCards(vehicles) {
         `;
 
         // Event Listeners
+        const insuranceBtns = card.querySelectorAll('.btn-open-insurance');
+        insuranceBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                fetch(`https://${GetParentResourceName()}/openInsuranceManager`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ plate: veh.plate })
+                });
+            });
+        });
+
         const coownerBtn = card.querySelector('.btn-coowner');
         if (coownerBtn) {
             coownerBtn.addEventListener('click', (e) => {
