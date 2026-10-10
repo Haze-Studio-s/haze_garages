@@ -111,16 +111,11 @@ Antes de iniciar os testes em jogo, confirme os seguintes itens:
 ---
 
 ### 🔹 Teste 4: Como Guardar o Veículo (Área Demarcada de 4 Pontos + 5s)
-O sistema utiliza **Áreas Poligonais Demarcadas por 4 Pontos no Chão** (`dropZone.points`), fechando uma área retangular/poligonal exata para a garagem, substituindo qualquer raio circular antigo.
+O sistema utiliza **Áreas Poligonais Invisíveis de 4 Pontos** (`dropZone.points`), fechando uma área retangular/poligonal exata para a garagem sem desenhar nada no asfalto (imersão limpa, sem poluição visual 3D).
 
-1. **Visual da Área no Mundo 3D (Lation Emerald UI)**:
-   - Ao se aproximar da garagem (até 35 metros de distância), o sistema desenha no asfalto:
-     - **Linhas Perimetrais Reforçadas**: Conectando o Ponto 1 ➔ Ponto 2 ➔ Ponto 3 ➔ Ponto 4 ➔ Ponto 1 na cor esmeralda (`#10b981`).
-     - **Marcadores de Canto**: Demarcadores discretos em cada um dos 4 vértices da área.
-     - **Marcador Central**: Ponto circular sutil indicando o baricentro da vaga.
-2. **Método 1: Pela Tecla [E] no Volante (Dentro dos 4 Pontos)**:
+1. **Método 1: Pela Tecla [E] no Volante (Dentro dos 4 Pontos)**:
    - Estacione com o veículo dentro da área delimitada pelos 4 pontos.
-   - Assim que o veículo cruza o perímetro, surge o aviso flutuante: **`[E] Guardar Veículo na [Nome da Garagem]`**.
+   - Assim que o veículo entra no perímetro da vaga, surge o aviso flutuante: **`[E] Guardar Veículo na [Nome da Garagem]`**.
    - Pressione **[E]**.
 3. **Método 2: Pelo Atendente NPC (ox_target)**:
    - Pare o veículo dentro do lote delimitado pelos 4 pontos da garagem e desça a pé.

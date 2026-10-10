@@ -152,29 +152,6 @@ local function isCoordsInDropZone(coords, dz)
     return false
 end
 
---- Desenha as linhas conectando os 4 pontos e marcadores nos cantos no chão
-local function drawPolygonZoneLines(points, center, r, g, b, a)
-    local n = #points
-    if n < 3 then return end
-
-    for i = 1, n do
-        local nextIdx = (i % n) + 1
-        local p1 = points[i]
-        local p2 = points[nextIdx]
-
-        -- Linha dupla reforçada conectando os cantos no asfalto
-        DrawLine(p1.x, p1.y, p1.z + 0.05, p2.x, p2.y, p2.z + 0.05, r, g, b, a)
-        DrawLine(p1.x, p1.y, p1.z + 0.12, p2.x, p2.y, p2.z + 0.12, r, g, b, a)
-
-        -- Marcador em cada canto
-        DrawMarker(25, p1.x, p1.y, p1.z - 0.95, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.8, 0.8, 0.25, r, g, b, a, false, false, 2, false, nil, nil, false)
-    end
-
-    -- Marcador circular sutil no centro
-    if center then
-        DrawMarker(27, center.x, center.y, center.z - 0.92, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.5, 2.5, 0.4, r, g, b, math.floor(a * 0.7), false, false, 2, false, nil, nil, false)
-    end
-end
 
 local function getVehicleInGarageDropZone(garageId)
     local gData = Config.FixedGarages[garageId]
@@ -409,7 +386,7 @@ AddEventHandler("haze_garages:client:init", function()
 
                 local drivePt = lib.points.new({
                     coords = center,
-                    distance = maxRadius + 30.0,
+                    distance = maxRadius + 4.0,
                     onLeave = function()
                         if isPromptShown then
                             lib.hideTextUI()
@@ -417,14 +394,7 @@ AddEventHandler("haze_garages:client:init", function()
                         end
                     end,
                     nearby = function(self)
-                        -- 1. Desenha as linhas conectando os 4 pontos e os cantos no asfalto (Lation Emerald #10b981)
-                        if isPoly then
-                            drawPolygonZoneLines(dz.points, center, 16, 185, 129, 200)
-                        else
-                            DrawMarker(27, center.x, center.y, center.z - 0.9, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, maxRadius * 1.5, maxRadius * 1.5, 0.5, 16, 185, 129, 130, false, false, 2, false, nil, nil, false)
-                        end
-
-                        -- 2. Detecta se o jogador no veículo está dentro da área fechada pelos 4 pontos
+                        -- Detecta se o jogador no veículo está dentro da área fechada pelos 4 pontos
                         local ped = cache.ped or PlayerPedId()
                         if IsPedInAnyVehicle(ped, false) and GetPedInVehicleSeat(GetVehiclePedIsIn(ped, false), -1) == ped then
                             local currentVeh = GetVehiclePedIsIn(ped, false)
